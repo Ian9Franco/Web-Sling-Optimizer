@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-main: #090b10;
+  --bg-card: #111522;
+  --bg-card-hover: #181d2e;
+  --border-subtle: #1e2638;
+  --border-active: #2563eb;
+  --accent-red: #e62429;
+  --accent-red-hover: #ff3b30;
+  --accent-blue: #2563eb;
+  --accent-blue-hover: #3b82f6;
+  --text-main: #ffffff;
+  --text-muted: #94a3b8;
+}
+
+body {
+  color: var(--text-main);
+  background-color: var(--bg-main);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  letter-spacing: -0.01em;
+}
+
+/* Custom dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #090b10;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e2638;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Spider-Man Technical Grid Background - Crisp white grid lines */
+.bg-tech-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+}
+
+/* Minimalist border highlight */
+.panel-border {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+}
+
+.panel-border:hover {
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+/* Custom range slider */
+input[type="range"] {
+  accent-color: #e62429;
+}
