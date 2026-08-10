@@ -305,6 +305,71 @@ export default function HomePage() {
     setImages(prev => prev.filter(img => img.id !== id));
   };
 
+  // Re-procesar todas las imágenes cargadas con los parámetros vigentes o nuevos
+  const reprocessBatch = async (overrides?: {
+    maxKB?: number;
+    resizeMode?: 'none' | 'custom';
+    customWidth?: string;
+    customHeight?: string;
+    format?: string;
+    cropFit?: 'inside' | 'cover';
+    cropPosition?: 'center' | 'top' | 'bottom' | 'entropy' | 'attention';
+  }) => {
+    const targetKB = overrides?.maxKB ?? maxKB;
+    const targetMode = overrides?.resizeMode ?? resizeMode;
+    const targetWidth = overrides?.customWidth ?? customWidth;
+    const targetHeight = overrides?.customHeight ?? customHeight;
+    const targetFormat = overrides?.format ?? format;
+    const targetFit = overrides?.cropFit ?? cropFit;
+    const targetPosition = overrides?.cropPosition ?? cropPosition;
+
+    const list = [...images];
+    if (list.length === 0) return;
+
+    for (const img of list) {
+      setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'processing' } : i));
+      try {
+        const blob = await fetch(img.previewUrl).then(r => r.blob());
+        const file = new File([blob], img.originalName, { type: img.mimeType || 'image/jpeg' });
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('maxKB', targetKB.toString());
+        formData.append('resizeMode', targetMode);
+        formData.append('maxWidth', targetWidth || '0');
+        formData.append('maxHeight', targetHeight || '0');
+        formData.append('format', targetFormat);
+        formData.append('rotate', rotate.toString());
+        formData.append('flip', flip ? 'true' : 'false');
+        formData.append('grayscale', grayscale ? 'true' : 'false');
+        formData.append('stripExif', stripExif ? 'true' : 'false');
+        formData.append('watermarkText', watermarkText);
+        formData.append('customName', customNamePattern);
+        formData.append('cropFit', targetFit);
+        formData.append('cropPosition', targetPosition);
+
+        const res = await fetch('/api/compress', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Error al procesar');
+
+        setImages(prev => prev.map(i => i.id === img.id ? {
+          ...i,
+          status: 'done',
+          outputFileName: data.outputFileName,
+          finalWidth: data.finalWidth,
+          finalHeight: data.finalHeight,
+          compressedSizeBytes: data.compressedSizeBytes,
+          qualityApplied: data.qualityApplied,
+          formatApplied: data.formatApplied,
+          savedPercentage: data.savedPercentage,
+          base64Data: data.base64Data,
+        } : i));
+      } catch (err: any) {
+        setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error', errorMessage: err.message } : i));
+      }
+    }
+  };
+
   const downloadSingle = (img: ProcessedImage) => {
     const a = document.createElement('a');
     a.href = img.base64Data;
@@ -459,7 +524,10 @@ export default function HomePage() {
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
-                  onClick={() => { setMaxKB(100); setResizeMode('custom'); setCustomWidth('800'); setCustomHeight('800'); setFormat('webp'); }}
+                  onClick={() => { 
+                    setMaxKB(100); setResizeMode('custom'); setCustomWidth('800'); setCustomHeight('800'); setFormat('webp'); setCropFit('cover');
+                    reprocessBatch({ maxKB: 100, resizeMode: 'custom', customWidth: '800', customHeight: '800', format: 'webp', cropFit: 'cover' });
+                  }}
                   className="p-2 text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 text-left transition"
                 >
                   <span className="block font-bold text-white">E-commerce</span>
@@ -467,7 +535,10 @@ export default function HomePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setMaxKB(200); setResizeMode('custom'); setCustomWidth('1080'); setCustomHeight('1080'); setFormat('jpg'); }}
+                  onClick={() => { 
+                    setMaxKB(200); setResizeMode('custom'); setCustomWidth('1080'); setCustomHeight('1080'); setFormat('jpg'); setCropFit('cover');
+                    reprocessBatch({ maxKB: 200, resizeMode: 'custom', customWidth: '1080', customHeight: '1080', format: 'jpg', cropFit: 'cover' });
+                  }}
                   className="p-2 text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 text-left transition"
                 >
                   <span className="block font-bold text-white">Redes Social</span>
@@ -475,7 +546,10 @@ export default function HomePage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setMaxKB(50); setResizeMode('custom'); setCustomWidth('500'); setCustomHeight(''); setFormat('webp'); }}
+                  onClick={() => { 
+                    setMaxKB(50); setResizeMode('custom'); setCustomWidth('500'); setCustomHeight(''); setFormat('webp'); setCropFit('inside');
+                    reprocessBatch({ maxKB: 50, resizeMode: 'custom', customWidth: '500', customHeight: '', format: 'webp', cropFit: 'inside' });
+                  }}
                   className="p-2 text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 text-left transition"
                 >
                   <span className="block font-bold text-white">Emailing</span>
@@ -608,7 +682,9 @@ export default function HomePage() {
                             onClick={() => { 
                               setCustomWidth(preset.w); 
                               setCustomHeight(preset.h); 
-                              setCropFit(preset.fit as any); 
+                              setCropFit(preset.fit as any);
+                              setResizeMode('custom');
+                              reprocessBatch({ customWidth: preset.w, customHeight: preset.h, cropFit: preset.fit as any, resizeMode: 'custom' });
                             }}
                             className="text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] text-slate-300 px-2 py-1 rounded transition"
                           >
@@ -861,6 +937,16 @@ export default function HomePage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => reprocessBatch()}
+                    className="flex items-center gap-1.5 text-xs font-mono text-slate-300 hover:text-white px-2.5 py-1 rounded bg-[#14161b] border border-[#232730] hover:border-[#2563eb] transition"
+                    title="Re-comprimir todo el lote con los parámetros actuales"
+                  >
+                    <RotateCw className="w-3.5 h-3.5 text-[#2563eb]" />
+                    <span>Re-aplicar Ajustes</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setImages([])}
