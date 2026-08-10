@@ -69,6 +69,11 @@ export default function HomePage() {
   const [watermarkText, setWatermarkText] = useState<string>('');
   const [customNamePattern, setCustomNamePattern] = useState<string>('');
 
+  // Opciones de Recorte y Aspect Ratio (Google Ads / Redes)
+  const [cropFit, setCropFit] = useState<'inside' | 'cover'>('inside');
+  const [cropPosition, setCropPosition] = useState<'center' | 'top' | 'bottom' | 'entropy' | 'attention'>('center');
+  const [selectedCropImage, setSelectedCropImage] = useState<ProcessedImage | null>(null);
+
   // Favicon Modal State
   const [isFaviconModalOpen, setIsFaviconModalOpen] = useState(false);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
@@ -240,6 +245,8 @@ export default function HomePage() {
         formData.append('stripExif', stripExif ? 'true' : 'false');
         formData.append('watermarkText', watermarkText);
         formData.append('customName', customNamePattern);
+        formData.append('cropFit', cropFit);
+        formData.append('cropPosition', cropPosition);
 
         const res = await fetch('/api/compress', {
           method: 'POST',
@@ -583,27 +590,80 @@ export default function HomePage() {
                       </div>
                     </div>
 
-                    {/* Presets de dimensiones */}
+                    {/* Presets de dimensiones y Ads */}
                     <div className="space-y-1">
-                      <span className="text-[10px] font-mono text-slate-500 block">Presets rápidos:</span>
+                      <span className="text-[10px] font-mono text-slate-400 block font-bold">Presets Rápidos & Formatos Ads:</span>
                       <div className="flex flex-wrap gap-1">
                         {[
-                          { label: 'Full HD (1920)', w: '1920', h: '' },
-                          { label: 'HD (1280)', w: '1280', h: '' },
-                          { label: 'Web (800)', w: '800', h: '' },
-                          { label: 'Cuadrado (800x800)', w: '800', h: '800' }
+                          { label: 'Google Ads (1200x628)', w: '1200', h: '628', fit: 'cover' },
+                          { label: 'Banner (1920x1080)', w: '1920', h: '1080', fit: 'cover' },
+                          { label: 'Cuadrado (1080x1080)', w: '1080', h: '1080', fit: 'cover' },
+                          { label: 'Historia (1080x1920)', w: '1080', h: '1920', fit: 'cover' },
+                          { label: 'Retrato (1080x1350)', w: '1080', h: '1350', fit: 'cover' },
+                          { label: 'Libre HD (1280)', w: '1280', h: '', fit: 'inside' },
                         ].map((preset, idx) => (
                           <button
                             key={idx}
                             type="button"
-                            onClick={() => { setCustomWidth(preset.w); setCustomHeight(preset.h); }}
-                            className="text-[10px] font-mono bg-[#14161b] hover:bg-[#232730] border border-[#232730] text-slate-300 px-2 py-1 rounded"
+                            onClick={() => { 
+                              setCustomWidth(preset.w); 
+                              setCustomHeight(preset.h); 
+                              setCropFit(preset.fit as any); 
+                            }}
+                            className="text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] text-slate-300 px-2 py-1 rounded transition"
                           >
                             {preset.label}
                           </button>
                         ))}
                       </div>
                     </div>
+
+                    {/* Modo de Ajuste: Escalar vs Recortar */}
+                    <div className="space-y-2 pt-2 border-t border-[#232730]">
+                      <label className="text-[10px] font-mono text-slate-400 block font-bold">Modo de Recorte (Sin Estirar):</label>
+                      <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => setCropFit('inside')}
+                          className={`py-1.5 px-2 rounded border text-center transition ${
+                            cropFit === 'inside'
+                              ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold'
+                              : 'bg-[#14161b] border-[#232730] text-slate-400'
+                          }`}
+                        >
+                          Sin Cortar (Escalar)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCropFit('cover')}
+                          className={`py-1.5 px-2 rounded border text-center transition ${
+                            cropFit === 'cover'
+                              ? 'bg-[#e62429] border-[#e62429] text-white font-bold'
+                              : 'bg-[#14161b] border-[#232730] text-slate-400'
+                          }`}
+                        >
+                          Recortar Formato Exacto
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Enfoque / Zona de Recorte */}
+                    {cropFit === 'cover' && (
+                      <div className="space-y-1.5 pt-2 border-t border-[#232730]">
+                        <label className="text-[10px] font-mono text-slate-400 block font-bold">Enfoque / Zona de Recorte:</label>
+                        <select
+                          value={cropPosition}
+                          onChange={(e) => setCropPosition(e.target.value as any)}
+                          className="w-full bg-[#14161b] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 text-white outline-none"
+                        >
+                          <option value="center">Centro (Default)</option>
+                          <option value="top">Arriba (Priorizar Cabecera)</option>
+                          <option value="bottom">Abajo (Priorizar Base)</option>
+                          <option value="entropy">IA Enfoque Inteligente (Detalles)</option>
+                          <option value="attention">IA Detección de Sujeto / Rostros</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -923,6 +983,14 @@ export default function HomePage() {
                               <>
                                 <button
                                   type="button"
+                                  onClick={() => setSelectedCropImage(img)}
+                                  className="p-1.5 rounded bg-[#0c0d10] text-[#e62429] hover:text-white border border-[#232730]"
+                                  title="Recortar / Formato Ads"
+                                >
+                                  <Crop className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() => setSelectedPreview(img)}
                                   className="p-1.5 rounded bg-[#0c0d10] text-slate-400 hover:text-white border border-[#232730]"
                                   title="Ver Comparativa"
@@ -1202,6 +1270,149 @@ export default function HomePage() {
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Descargar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Inspector de Recorte y Formato Ads */}
+      {selectedCropImage && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
+          <div className="panel-border bg-[#111522] max-w-3xl w-full p-6 relative font-mono">
+            <button
+              type="button"
+              onClick={() => setSelectedCropImage(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 bg-[#090b10] border border-[#232730] rounded"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-1">
+              <Crop className="w-5 h-5 text-[#e62429]" />
+              <h3 className="text-base font-bold text-white uppercase">Recorte & Aspect Ratio (Google Ads / Social)</h3>
+            </div>
+            <p className="text-xs text-slate-400 mb-4">
+              Convierte fotos verticales u horizontales a formatos exactos sin deformar la imagen.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              {/* Previsualización del Encuadre */}
+              <div className="space-y-2">
+                <span className="text-xs text-slate-300 font-bold block">Previsualización de Encuadre:</span>
+                <div className="aspect-video bg-[#090b10] rounded border border-[#232730] overflow-hidden relative flex items-center justify-center p-2">
+                  <img src={selectedCropImage.previewUrl} alt="Crop Preview" className="max-w-full max-h-full object-contain" />
+                  <div className="absolute inset-2 border-2 border-dashed border-[#e62429] pointer-events-none flex items-center justify-center bg-[#e62429]/10">
+                    <span className="bg-[#090b10]/80 text-[#e62429] px-2 py-0.5 rounded text-[10px] font-bold border border-[#e62429]/40">
+                      Zona de Recorte ({customWidth || '1200'} × {customHeight || '628'} px)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ajustes de Formato y Zona */}
+              <div className="space-y-4 text-xs">
+                <div>
+                  <label className="text-slate-400 block mb-1.5 font-bold">1. Seleccionar Formato Objetivo:</label>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    {[
+                      { label: 'Google Ads Horizontal (1200 × 628)', w: '1200', h: '628' },
+                      { label: 'Banner HD (16:9 - 1920 × 1080)', w: '1920', h: '1080' },
+                      { label: 'Cuadrado (1:1 - 1080 × 1080)', w: '1080', h: '1080' },
+                      { label: 'Historia Vertical (9:16 - 1080 × 1920)', w: '1080', h: '1920' },
+                      { label: 'Retrato (4:5 - 1080 × 1350)', w: '1080', h: '1350' },
+                    ].map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => { setCustomWidth(preset.w); setCustomHeight(preset.h); setCropFit('cover'); }}
+                        className={`text-left px-3 py-1.5 rounded border transition ${
+                          customWidth === preset.w && customHeight === preset.h
+                            ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold'
+                            : 'bg-[#090b10] border-[#232730] text-slate-300 hover:border-slate-600'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-slate-400 block mb-1.5 font-bold">2. Posición / Enfoque del Recorte:</label>
+                  <select
+                    value={cropPosition}
+                    onChange={(e) => setCropPosition(e.target.value as any)}
+                    className="w-full bg-[#090b10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 text-white outline-none"
+                  >
+                    <option value="center">Centro (Recomendado)</option>
+                    <option value="top">Arriba (Priorizar rostros / cabecera)</option>
+                    <option value="bottom">Abajo (Priorizar base)</option>
+                    <option value="entropy">IA Enfoque Inteligente (Contraste/Detalles)</option>
+                    <option value="attention">IA Detección de Sujeto Principal</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setSelectedCropImage(null)}
+                className="px-4 py-2 bg-[#090b10] border border-[#232730] text-slate-300 rounded"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!selectedCropImage) return;
+                  const targetImg = selectedCropImage;
+                  setSelectedCropImage(null);
+                  setImages(prev => prev.map(img => img.id === targetImg.id ? { ...img, status: 'processing' } : img));
+                  
+                  try {
+                    const blob = await fetch(targetImg.previewUrl).then(r => r.blob());
+                    const file = new File([blob], targetImg.originalName, { type: targetImg.mimeType || 'image/jpeg' });
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('maxKB', maxKB.toString());
+                    formData.append('resizeMode', 'custom');
+                    formData.append('maxWidth', customWidth || '1200');
+                    formData.append('maxHeight', customHeight || '628');
+                    formData.append('format', format);
+                    formData.append('rotate', rotate.toString());
+                    formData.append('flip', flip ? 'true' : 'false');
+                    formData.append('grayscale', grayscale ? 'true' : 'false');
+                    formData.append('stripExif', stripExif ? 'true' : 'false');
+                    formData.append('watermarkText', watermarkText);
+                    formData.append('cropFit', 'cover');
+                    formData.append('cropPosition', cropPosition);
+
+                    const res = await fetch('/api/compress', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!res.ok || !data.success) throw new Error(data.error);
+
+                    setImages(prev => prev.map(img => img.id === targetImg.id ? {
+                      ...img,
+                      status: 'done',
+                      outputFileName: data.outputFileName,
+                      finalWidth: data.finalWidth,
+                      finalHeight: data.finalHeight,
+                      compressedSizeBytes: data.compressedSizeBytes,
+                      qualityApplied: data.qualityApplied,
+                      formatApplied: data.formatApplied,
+                      savedPercentage: data.savedPercentage,
+                      base64Data: data.base64Data,
+                    } : img));
+                  } catch (err: any) {
+                    alert('Error recortando imagen: ' + err.message);
+                  }
+                }}
+                className="px-4 py-2 bg-[#e62429] text-white font-bold rounded flex items-center gap-1.5 hover:bg-[#ff3b30] shadow-md shadow-[#e62429]/30"
+              >
+                <Crop className="w-3.5 h-3.5" />
+                <span>Aplicar Recorte & Recomprimir</span>
               </button>
             </div>
           </div>

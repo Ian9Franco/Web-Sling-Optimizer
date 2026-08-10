@@ -11,12 +11,17 @@ export async function POST(req: NextRequest) {
     const maxHeight = parseInt((formData.get('maxHeight') as string) || '0', 10);
     const preferredFormat = (formData.get('format') as string) || 'original'; // 'original' | 'jpg' | 'webp' | 'png' | 'avif'
 
-    // Nuevas opciones avanzadas
+    // Nuevas opciones avanzadas de recorte y transformaciones
     const rotateAngle = parseInt((formData.get('rotate') as string) || '0', 10);
     const flipHorizontal = formData.get('flip') === 'true';
     const applyGrayscale = formData.get('grayscale') === 'true';
     const stripExif = formData.get('stripExif') !== 'false';
     const watermarkText = (formData.get('watermarkText') as string || '').trim();
+    const customName = (formData.get('customName') as string || '').trim();
+    
+    // Opciones avanzadas de Recorte y Aspect Ratio
+    const cropFit = (formData.get('cropFit') as string) || 'inside'; // 'inside' | 'cover' | 'contain'
+    const cropPosition = (formData.get('cropPosition') as string) || 'center'; // 'center' | 'top' | 'bottom' | 'left' | 'right' | 'entropy' | 'attention'
 
     if (!file) {
       return NextResponse.json({ error: 'No se ha subido ningún archivo.' }, { status: 400 });
@@ -30,8 +35,6 @@ export async function POST(req: NextRequest) {
     const originalWidth = metadata.width || 0;
     const originalHeight = metadata.height || 0;
     const originalSize = inputBuffer.length;
-
-    const customName = (formData.get('customName') as string || '').trim();
 
     let ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
     let defaultBaseName = file.name.substring(0, file.name.lastIndexOf('.'));
@@ -99,14 +102,15 @@ export async function POST(req: NextRequest) {
         pipeline = pipeline.grayscale();
       }
 
-      // Resizing
+      // Resizing & Recorte sin deformar (Crop / Aspect Ratio)
       if (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0)) {
         pipeline = pipeline.resize(
           maxWidth > 0 ? maxWidth : undefined,
           maxHeight > 0 ? maxHeight : undefined,
           {
-            fit: 'inside',
-            withoutEnlargement: true,
+            fit: (cropFit === 'cover' ? 'cover' : cropFit === 'contain' ? 'contain' : 'inside') as any,
+            position: cropPosition as any,
+            withoutEnlargement: cropFit === 'cover' ? false : true,
             kernel: sharp.kernel.lanczos3,
           }
         );
