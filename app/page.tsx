@@ -79,28 +79,118 @@ export default function HomePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
 
-  // Captura Ctrl + V del portapapeles
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      if (!e.clipboardData) return;
-      const items = Array.from(e.clipboardData.items);
-      const imageFiles: File[] = [];
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          const file = item.getAsFile();
-          if (file) {
-            imageFiles.push(new File([file], `paste_${Date.now()}.png`, { type: file.type }));
-          }
+  // Helper para escanear directorios y carpetas recursivamente
+  const scanEntry = async (entry: any): Promise<File[]> => {
+    const files: File[] = [];
+    if (entry.isFile) {
+      return new Promise((resolve) => {
+        entry.file((file: File) => resolve([file]), () => resolve([]));
+      });
+    } else if (entry.isDirectory) {
+      const dirReader = entry.createReader();
+      const readEntries = async (): Promise<any[]> => {
+        return new Promise((resolve) => {
+          dirReader.readEntries((entries: any[]) => resolve(entries), () => resolve([]));
+        });
+      };
+      let entries = await readEntries();
+      while (entries.length > 0) {
+        for (const childEntry of entries) {
+          const childFiles = await scanEntry(childEntry);
+          files.push(...childFiles);
         }
+        entries = await readEntries();
       }
-      if (imageFiles.length > 0) {
-        handleFiles(imageFiles);
+    }
+    return files;
+  };
+
+  // Procesador inteligente de carpetas, zips y archivos sueltos
+  const processDataTransfer = async (dataTransfer: DataTransfer) => {
+    const extractedFiles: File[] = [];
+    const items = Array.from(dataTransfer.items || []);
+    const entries: any[] = [];
+
+    for (const item of items) {
+      if (item.webkitGetAsEntry) {
+        const entry = item.webkitGetAsEntry();
+        if (entry) entries.push(entry);
+      }
+    }
+
+    if (entries.length > 0) {
+      for (const entry of entries) {
+        const filesFromEntry = await scanEntry(entry);
+        extractedFiles.push(...filesFromEntry);
+      }
+    } else if (dataTransfer.files) {
+      extractedFiles.push(...Array.from(dataTransfer.files));
+    }
+
+    const finalImageFiles: File[] = [];
+
+    for (const file of extractedFiles) {
+      if (file.name.toLowerCase().endsWith('.zip') || file.type === 'application/zip' || file.type === 'application/x-zip-compressed') {
+        try {
+          const zip = await JSZip.loadAsync(file);
+          const zipFilePromises: Promise<File | null>[] = [];
+
+          zip.forEach((relativePath, zipEntry) => {
+            if (!zipEntry.dir && /\.(jpg|jpeg|png|webp|avif|tiff|bmp)$/i.test(zipEntry.name)) {
+              zipFilePromises.push(
+                zipEntry.async('blob').then(blob => {
+                  const fileName = relativePath.split('/').pop() || zipEntry.name;
+                  return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+                })
+              );
+            }
+          });
+
+          const unpackedFiles = await Promise.all(zipFilePromises);
+          unpackedFiles.forEach(f => { if (f) finalImageFiles.push(f); });
+        } catch (err) {
+          console.error('Error al descomprimir archivo ZIP:', err);
+        }
+      } else if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|avif|tiff|bmp)$/i.test(file.name)) {
+        finalImageFiles.push(file);
+      }
+    }
+
+    if (finalImageFiles.length > 0) {
+      await handleFiles(finalImageFiles);
+    }
+  };
+
+  // Drag & Drop Global en toda la ventana
+  useEffect(() => {
+    const handleWindowDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+    };
+
+    const handleWindowDragLeave = (e: DragEvent) => {
+      if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+        setIsDragging(false);
       }
     };
 
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, [maxKB, format, resizeMode, customWidth, customHeight, rotate, flip, grayscale, stripExif, watermarkText]);
+    const handleWindowDrop = async (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      if (e.dataTransfer) {
+        await processDataTransfer(e.dataTransfer);
+      }
+    };
+
+    window.addEventListener('dragover', handleWindowDragOver);
+    window.addEventListener('dragleave', handleWindowDragLeave);
+    window.addEventListener('drop', handleWindowDrop);
+    return () => {
+      window.removeEventListener('dragover', handleWindowDragOver);
+      window.removeEventListener('dragleave', handleWindowDragLeave);
+      window.removeEventListener('drop', handleWindowDrop);
+    };
+  }, [maxKB, format, resizeMode, customWidth, customHeight, rotate, flip, grayscale, stripExif, watermarkText, customNamePattern]);
 
   const handleFiles = async (filesList: FileList | File[]) => {
     const validFiles = Array.from(filesList).filter(file => 
@@ -204,6 +294,10 @@ export default function HomePage() {
     }
   };
 
+  const removeSingleImage = (id: string) => {
+    setImages(prev => prev.filter(img => img.id !== id));
+  };
+
   const downloadSingle = (img: ProcessedImage) => {
     const a = document.createElement('a');
     a.href = img.base64Data;
@@ -299,7 +393,15 @@ export default function HomePage() {
   const overallSavedPercent = totalOriginalBytes > 0 ? ((totalSavedBytes / totalOriginalBytes) * 100).toFixed(0) : '0';
 
   return (
-    <div className="bg-tech-grid min-h-screen font-sans text-slate-200 antialiased pb-16">
+    <div className="bg-tech-grid min-h-screen font-sans text-slate-200 antialiased pb-16 relative">
+      {/* Overlay Drag & Drop Global */}
+      {isDragging && (
+        <div className="fixed inset-0 z-50 bg-[#090b10]/95 backdrop-blur-md border-4 border-dashed border-[#e62429] flex flex-col items-center justify-center text-white pointer-events-none animate-pulse">
+          <Upload className="w-16 h-16 text-[#e62429] mb-4 animate-bounce" />
+          <h2 className="text-2xl font-mono font-bold uppercase mb-2">¡SOLTAR ARCHIVOS, CARPETAS O ZIP ACÁ!</h2>
+          <p className="text-sm font-mono text-slate-400">Escanearemos y procesaremos todas las imágenes encontradas automáticamente</p>
+        </div>
+      )}
       {/* Navbar Superior */}
       <nav className="border-b border-[#232730] bg-[#090b10]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
@@ -787,11 +889,23 @@ export default function HomePage() {
                             <div>
                               <span className="text-emerald-400 font-bold">{formatBytes(img.compressedSizeBytes)}</span>
                               <span className="text-slate-500 block text-[10px]">de {formatBytes(img.originalSizeBytes)} (-{img.savedPercentage}%)</span>
+                              {img.originalSizeBytes > 4.5 * 1024 * 1024 && (
+                                <span className="block text-[9px] text-amber-400 font-semibold">
+                                  ⚠️ Original {formatBytes(img.originalSizeBytes)} (&gt; 4.5MB)
+                                </span>
+                              )}
                             </div>
                           ) : img.status === 'processing' ? (
                             <span className="text-[#2563eb] animate-pulse">Comprimiendo...</span>
                           ) : (
-                            <span className="text-rose-400">Error</span>
+                            <div className="space-y-0.5">
+                              <span className="text-rose-400 block font-bold">Error</span>
+                              {img.originalSizeBytes > 4.5 * 1024 * 1024 && (
+                                <span className="text-[9px] text-rose-400 block">
+                                  Excede 4.5MB (Límite Serverless Vercel)
+                                </span>
+                              )}
+                            </div>
                           )}
                         </td>
 
@@ -804,26 +918,36 @@ export default function HomePage() {
                         </td>
 
                         <td className="p-3 text-right">
-                          {img.status === 'done' && (
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedPreview(img)}
-                                className="p-1.5 rounded bg-[#0c0d10] text-slate-400 hover:text-white border border-[#232730]"
-                                title="Ver Comparativa"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => downloadSingle(img)}
-                                className="p-1.5 rounded bg-[#e62429] text-white font-bold hover:bg-[#ff3b30] shadow-sm shadow-[#e62429]/30"
-                                title="Descargar"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex items-center justify-end gap-1.5">
+                            {img.status === 'done' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedPreview(img)}
+                                  className="p-1.5 rounded bg-[#0c0d10] text-slate-400 hover:text-white border border-[#232730]"
+                                  title="Ver Comparativa"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => downloadSingle(img)}
+                                  className="p-1.5 rounded bg-[#e62429] text-white font-bold hover:bg-[#ff3b30] shadow-sm shadow-[#e62429]/30"
+                                  title="Descargar"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => removeSingleImage(img.id)}
+                              className="p-1.5 rounded bg-[#0c0d10] text-slate-400 hover:text-rose-400 border border-[#232730] transition"
+                              title="Eliminar de la lista"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -836,7 +960,15 @@ export default function HomePage() {
             {images.length > 0 && viewMode === 'grid' && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {images.map((img) => (
-                  <div key={img.id} className="panel-border p-4 space-y-3">
+                  <div key={img.id} className="panel-border p-4 space-y-3 relative group">
+                    <button
+                      type="button"
+                      onClick={() => removeSingleImage(img.id)}
+                      className="absolute top-2 right-2 p-1.5 rounded-md bg-[#090b10]/90 text-slate-400 hover:text-rose-400 border border-[#232730] transition backdrop-blur z-10"
+                      title="Eliminar de la lista"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                     <div className="aspect-video bg-[#0c0d10] rounded-lg overflow-hidden border border-[#232730] relative">
                       <img src={img.base64Data || img.previewUrl} alt={img.originalName} className="w-full h-full object-cover" />
                     </div>
