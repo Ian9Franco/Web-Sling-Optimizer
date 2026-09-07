@@ -1,6 +1,4 @@
-'use client';
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Zap, 
   Sliders, 
@@ -10,9 +8,13 @@ import {
   FlipHorizontal, 
   ShieldCheck, 
   Type, 
-  Copy 
+  Copy,
+  BookmarkPlus,
+  Trash2,
+  Check,
+  X
 } from 'lucide-react';
-import { CropFit, CropPosition, ReprocessOverrides } from '../types/image';
+import { CropFit, CropPosition, ReprocessOverrides, CustomPreset } from '../types/image';
 
 interface SettingsPanelProps {
   maxKB: number;
@@ -40,7 +42,7 @@ interface SettingsPanelProps {
   watermarkText: string;
   setWatermarkText: (val: string) => void;
   customNamePattern: string;
-  setCustomNamePattern: (val: string) => void;
+  setCustomNamePattern: React.Dispatch<React.SetStateAction<string>>;
   reprocessBatch: (overrides?: ReprocessOverrides) => Promise<void>;
   totalImages: number;
   totalOriginalBytes: number;
@@ -81,14 +83,132 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   totalCompressedBytes,
   formatBytes,
 }) => {
+  const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
+  const [isAddingPreset, setIsAddingPreset] = useState(false);
+  const [newPresetName, setNewPresetName] = useState('');
+
+  // Cargar presets de usuario guardados en localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('websling_user_presets');
+      if (saved) {
+        setCustomPresets(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Error cargando presets de localStorage:', e);
+    }
+  }, []);
+
+  const handleSaveCurrentAsPreset = () => {
+    if (!newPresetName.trim()) return;
+    const newPreset: CustomPreset = {
+      id: Math.random().toString(36).substring(2, 9),
+      name: newPresetName.trim(),
+      maxKB,
+      format,
+      resizeMode,
+      customWidth,
+      customHeight,
+      cropFit,
+      cropPosition,
+    };
+    const updated = [...customPresets, newPreset];
+    setCustomPresets(updated);
+    try {
+      localStorage.setItem('websling_user_presets', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error guardando preset en localStorage:', e);
+    }
+    setNewPresetName('');
+    setIsAddingPreset(false);
+  };
+
+  const handleDeletePreset = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const updated = customPresets.filter(p => p.id !== id);
+    setCustomPresets(updated);
+    try {
+      localStorage.setItem('websling_user_presets', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error actualizando presets en localStorage:', e);
+    }
+  };
+
+  const handleApplyPreset = (preset: CustomPreset) => {
+    setMaxKB(preset.maxKB);
+    setFormat(preset.format);
+    setResizeMode(preset.resizeMode);
+    setCustomWidth(preset.customWidth);
+    setCustomHeight(preset.customHeight);
+    setCropFit(preset.cropFit);
+    setCropPosition(preset.cropPosition);
+    reprocessBatch({
+      maxKB: preset.maxKB,
+      format: preset.format,
+      resizeMode: preset.resizeMode,
+      customWidth: preset.customWidth,
+      customHeight: preset.customHeight,
+      cropFit: preset.cropFit,
+      cropPosition: preset.cropPosition,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Presets Rápidos de 1-Clic */}
-      <div className="panel-border p-4 space-y-2">
-        <div className="flex items-center gap-1.5 text-xs font-mono text-slate-300 font-bold uppercase">
-          <Zap className="w-3.5 h-3.5 text-[#e62429]" />
-          <span>Presets de 1-Clic</span>
+      <div className="panel-border p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 text-xs font-mono text-slate-300 font-bold uppercase">
+            <Zap className="w-3.5 h-3.5 text-[#e62429]" />
+            <span>Presets de 1-Clic</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsAddingPreset(prev => !prev)}
+            className="flex items-center gap-1 text-[10px] font-mono text-slate-400 hover:text-white px-2 py-0.5 rounded bg-[#14161b] border border-[#232730] hover:border-[#2563eb] transition"
+            title="Guardar los ajustes actuales como un preset reutilizable"
+          >
+            <BookmarkPlus className="w-3 h-3 text-[#2563eb]" />
+            <span>Guardar Actual</span>
+          </button>
         </div>
+
+        {/* Input para guardar preset nuevo */}
+        {isAddingPreset && (
+          <div className="bg-[#0c0d10] p-2.5 rounded border border-[#2563eb]/50 space-y-2 font-mono text-xs">
+            <label className="text-[10px] text-slate-400 block">Nombre del Preset:</label>
+            <div className="flex gap-1.5">
+              <input
+                type="text"
+                placeholder="Ej. Mi Blog (800px, 80KB)"
+                value={newPresetName}
+                onChange={(e) => setNewPresetName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSaveCurrentAsPreset(); }}
+                className="flex-1 bg-[#14161b] border border-[#232730] text-xs px-2 py-1 rounded text-white outline-none focus:border-[#2563eb]"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={handleSaveCurrentAsPreset}
+                className="p-1.5 bg-[#2563eb] text-white rounded hover:bg-[#3b82f6]"
+                title="Confirmar"
+              >
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddingPreset(false)}
+                className="p-1.5 bg-[#14161b] text-slate-400 rounded hover:text-white border border-[#232730]"
+                title="Cancelar"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Presets Nativos */}
         <div className="grid grid-cols-3 gap-1.5">
           <button
             type="button"
@@ -124,6 +244,37 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <span className="text-slate-400">500px &bull; 50KB</span>
           </button>
         </div>
+
+        {/* Presets Personalizados de Usuario */}
+        {customPresets.length > 0 && (
+          <div className="space-y-1.5 pt-2 border-t border-[#232730]">
+            <span className="text-[10px] font-mono text-slate-400 block font-bold">Mis Presets Guardados:</span>
+            <div className="grid grid-cols-2 gap-1.5">
+              {customPresets.map((preset) => (
+                <div
+                  key={preset.id}
+                  onClick={() => handleApplyPreset(preset)}
+                  className="p-2 text-[10px] font-mono bg-[#0c0d10] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 cursor-pointer transition relative group flex justify-between items-start"
+                >
+                  <div className="truncate pr-4">
+                    <span className="block font-bold text-white truncate">{preset.name}</span>
+                    <span className="text-slate-400 block text-[9px]">
+                      {preset.customWidth ? `${preset.customWidth}px` : 'Auto'} &bull; {preset.maxKB}KB &bull; {preset.format.toUpperCase()}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeletePreset(preset.id, e)}
+                    className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition p-0.5"
+                    title="Eliminar preset guardado"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="panel-border p-5 space-y-6">
@@ -403,19 +554,47 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             />
           </div>
 
-          {/* Nombre de Archivo Personalizado / Prefijo */}
-          <div className="space-y-1 pt-1">
-            <label className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
-              <Copy className="w-3 h-3 text-[#2563eb]" />
-              <span>Renombrar Archivo en Compresión (opcional)</span>
-            </label>
+          {/* Nombre de Archivo Personalizado / Patrón Dinámico */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+              <label className="flex items-center gap-1">
+                <Copy className="w-3 h-3 text-[#2563eb]" />
+                <span>Patrón de Renombrado en Lote (opcional)</span>
+              </label>
+            </div>
             <input
               type="text"
-              placeholder="Ej. producto_optimizada"
+              placeholder="Ej. {original}-{width}x{height}"
               value={customNamePattern}
               onChange={(e) => setCustomNamePattern(e.target.value)}
               className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 text-white outline-none"
             />
+            {/* Tokens rápidos */}
+            <div className="flex flex-wrap gap-1 text-[9px] font-mono">
+              {[
+                { label: '{original}', token: '{original}' },
+                { label: '{width}', token: '{width}' },
+                { label: '{height}', token: '{height}' },
+                { label: '{quality}', token: '{quality}' },
+                { label: '{format}', token: '{format}' },
+                { label: '{index}', token: '{index}' },
+              ].map((t) => (
+                <button
+                  key={t.token}
+                  type="button"
+                  onClick={() => setCustomNamePattern(prev => `${prev}${t.token}`)}
+                  className="bg-[#14161b] hover:border-[#2563eb] border border-[#232730] text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition"
+                  title={`Insertar comodín ${t.token}`}
+                >
+                  +{t.label}
+                </button>
+              ))}
+            </div>
+            {customNamePattern && (
+              <span className="text-[9px] text-slate-500 font-mono block truncate">
+                Vista previa: foto-800x600.webp
+              </span>
+            )}
           </div>
         </div>
       </div>

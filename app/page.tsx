@@ -19,6 +19,7 @@ import {
   FaviconResponse,
   FileSystemEntryItem 
 } from '../types/image';
+import { asyncPool } from '../utils/concurrency';
 import { Navbar } from '../components/Navbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { UploadZone } from '../components/UploadZone';
@@ -27,6 +28,7 @@ import { ImageGrid } from '../components/ImageGrid';
 import { CropModal } from '../components/CropModal';
 import { FaviconModal } from '../components/FaviconModal';
 import { PreviewModal } from '../components/PreviewModal';
+import { SrcsetModal } from '../components/SrcsetModal';
 import { Footer } from '../components/Footer';
 
 export default function HomePage() {
@@ -40,6 +42,7 @@ export default function HomePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [isZipping, setIsZipping] = useState(false);
   const [selectedPreview, setSelectedPreview] = useState<ProcessedImage | null>(null);
+  const [selectedSrcsetImage, setSelectedSrcsetImage] = useState<ProcessedImage | null>(null);
 
   // Opciones avanzadas de edición y seguridad
   const [rotate, setRotate] = useState<number>(0);
@@ -173,13 +176,32 @@ export default function HomePage() {
       }
     };
 
+    // Pegar imagen directamente desde el portapapeles (Ctrl + V)
+    const handleWindowPaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const pastedFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) pastedFiles.push(file);
+        }
+      }
+      if (pastedFiles.length > 0) {
+        handleFiles(pastedFiles);
+      }
+    };
+
     window.addEventListener('dragover', handleWindowDragOver);
     window.addEventListener('dragleave', handleWindowDragLeave);
     window.addEventListener('drop', handleWindowDrop);
+    window.addEventListener('paste', handleWindowPaste);
     return () => {
       window.removeEventListener('dragover', handleWindowDragOver);
       window.removeEventListener('dragleave', handleWindowDragLeave);
       window.removeEventListener('drop', handleWindowDrop);
+      window.removeEventListener('paste', handleWindowPaste);
     };
   }, [maxKB, format, resizeMode, customWidth, customHeight, rotate, flip, grayscale, stripExif, watermarkText, customNamePattern]);
 
@@ -211,8 +233,8 @@ export default function HomePage() {
 
     setImages(prev => [...newEntries, ...prev]);
 
-    for (let i = 0; i < validFiles.length; i++) {
-      const file = validFiles[i];
+    // Procesamiento con concurrencia controlada (3 tareas simultáneas)
+    await asyncPool(3, validFiles, async (file, i) => {
       const entryId = newEntries[i].id;
 
       setImages(prev => prev.map(img => img.id === entryId ? { ...img, status: 'processing' } : img));
@@ -231,6 +253,7 @@ export default function HomePage() {
         formData.append('stripExif', stripExif ? 'true' : 'false');
         formData.append('watermarkText', watermarkText);
         formData.append('customName', customNamePattern);
+        formData.append('index', (i + 1).toString());
         formData.append('cropFit', cropFit);
         formData.append('cropPosition', cropPosition);
 
@@ -268,10 +291,10 @@ export default function HomePage() {
           errorMessage: errorMsg
         } : img));
       }
-    }
+    });
   };
 
-  // Re-procesar todas las imágenes cargadas con los parámetros vigentes o nuevos
+  // Re-procesar todas las imágenes cargadas con concurrencia de 3 en paralelo
   const reprocessBatch = async (overrides?: ReprocessOverrides) => {
     const targetKB = overrides?.maxKB ?? maxKB;
     const targetMode = overrides?.resizeMode ?? resizeMode;
@@ -284,7 +307,7 @@ export default function HomePage() {
     const list = [...images];
     if (list.length === 0) return;
 
-    for (const img of list) {
+    await asyncPool(3, list, async (img, idx) => {
       setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'processing' } : i));
       try {
         const blob = await fetch(img.previewUrl).then(r => r.blob());
@@ -303,6 +326,7 @@ export default function HomePage() {
         formData.append('stripExif', stripExif ? 'true' : 'false');
         formData.append('watermarkText', watermarkText);
         formData.append('customName', customNamePattern);
+        formData.append('index', (idx + 1).toString());
         formData.append('cropFit', targetFit);
         formData.append('cropPosition', targetPosition);
 
@@ -326,7 +350,7 @@ export default function HomePage() {
         const errorMsg = err instanceof Error ? err.message : 'Error en proceso';
         setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error', errorMessage: errorMsg } : i));
       }
-    }
+    });
   };
 
   const removeSingleImage = (id: string) => {
@@ -612,6 +636,7 @@ export default function HomePage() {
                 onUpdateOutputFileName={updateOutputFileName}
                 onSelectCropImage={setSelectedCropImage}
                 onSelectPreview={setSelectedPreview}
+                onSelectSrcset={setSelectedSrcsetImage}
                 onDownloadSingle={downloadSingle}
                 onRemoveSingle={removeSingleImage}
                 formatBytes={formatBytes}
@@ -623,6 +648,7 @@ export default function HomePage() {
               <ImageGrid
                 images={images}
                 onUpdateOutputFileName={updateOutputFileName}
+                onSelectSrcset={setSelectedSrcsetImage}
                 onDownloadSingle={downloadSingle}
                 onRemoveSingle={removeSingleImage}
                 formatBytes={formatBytes}
@@ -669,6 +695,12 @@ export default function HomePage() {
         cropPosition={cropPosition}
         setCropPosition={setCropPosition}
         onApplyCrop={handleApplyCrop}
+      />
+
+      {/* Modal Snippet Srcset y Picture Responsive */}
+      <SrcsetModal
+        image={selectedSrcsetImage}
+        onClose={() => setSelectedSrcsetImage(null)}
       />
     </div>
   );

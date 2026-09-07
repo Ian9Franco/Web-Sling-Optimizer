@@ -31,9 +31,23 @@ export interface ReprocessOverrides {
   cropPosition?: CropPosition;
 }
 
+export interface CustomPreset {
+  id: string;
+  name: string;
+  maxKB: number;
+  format: string;
+  resizeMode: 'none' | 'custom';
+  customWidth: string;
+  customHeight: string;
+  cropFit: CropFit;
+  cropPosition: CropPosition;
+}
+
 export interface FaviconIconItem {
   name: string;
   size: number;
+  width?: number;
+  height?: number;
   base64: string;
 }
 
@@ -42,6 +56,7 @@ export interface FaviconResponse {
   originalName: string;
   icons: FaviconIconItem[];
   manifest: string;
+  headSnippet?: string;
 }
 
 export interface FileSystemFileEntryItem {

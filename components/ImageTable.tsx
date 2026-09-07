@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Crop, Eye, Download, Trash2 } from 'lucide-react';
+import { Crop, Eye, Download, Trash2, Code } from 'lucide-react';
 import { ProcessedImage } from '../types/image';
 
 interface ImageTableProps {
@@ -9,6 +9,7 @@ interface ImageTableProps {
   onUpdateOutputFileName: (id: string, name: string) => void;
   onSelectCropImage: (img: ProcessedImage) => void;
   onSelectPreview: (img: ProcessedImage) => void;
+  onSelectSrcset: (img: ProcessedImage) => void;
   onDownloadSingle: (img: ProcessedImage) => void;
   onRemoveSingle: (id: string) => void;
   formatBytes: (bytes: number) => string;
@@ -19,6 +20,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
   onUpdateOutputFileName,
   onSelectCropImage,
   onSelectPreview,
+  onSelectSrcset,
   onDownloadSingle,
   onRemoveSingle,
   formatBytes,
@@ -117,6 +119,14 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                 <div className="flex items-center justify-end gap-1.5">
                   {img.status === 'done' && (
                     <>
+                      <button
+                        type="button"
+                        onClick={() => onSelectSrcset(img)}
+                        className="p-1.5 rounded bg-[#0c0d10] text-[#2563eb] hover:text-white border border-[#232730]"
+                        title="Generar <picture> & srcset responsive"
+                      >
+                        <Code className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => onSelectCropImage(img)}

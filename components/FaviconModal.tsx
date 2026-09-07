@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { Package, X, Image as ImageIcon, Check, Download } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { Package, X, Image as ImageIcon, Check, Download, Copy } from 'lucide-react';
 import { FaviconResponse, FaviconIconItem } from '../types/image';
 
 interface FaviconModalProps {
@@ -30,6 +30,7 @@ export const FaviconModal: React.FC<FaviconModalProps> = ({
   downloadFaviconZip,
 }) => {
   const faviconInputRef = useRef<HTMLInputElement>(null);
+  const [copiedSnippet, setCopiedSnippet] = useState(false);
 
   if (!isOpen) return null;
 
@@ -89,15 +90,41 @@ export const FaviconModal: React.FC<FaviconModalProps> = ({
 
         {faviconResults && (
           <div className="space-y-4">
-            <div className="text-xs text-emerald-400 font-bold flex items-center gap-1">
-              <Check className="w-4 h-4" />
-              <span>¡Paquete de 6 iconos + site.webmanifest generado!</span>
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                <Check className="w-4 h-4" />
+                <span>¡Paquete de {faviconResults.icons.length} iconos + OpenGraph + webmanifest generado!</span>
+              </div>
+
+              {faviconResults.headSnippet && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (faviconResults.headSnippet) {
+                      navigator.clipboard.writeText(faviconResults.headSnippet);
+                      setCopiedSnippet(true);
+                      setTimeout(() => setCopiedSnippet(false), 2000);
+                    }
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 text-[10px] bg-[#2563eb] hover:bg-[#3b82f6] text-white rounded transition"
+                  title="Copiar etiquetas <link> y <meta> para el <head> de tu HTML"
+                >
+                  {copiedSnippet ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  <span>{copiedSnippet ? '¡Copiado!' : 'Copiar <head> HTML'}</span>
+                </button>
+              )}
             </div>
 
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-[10px] text-slate-400">
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2 text-center text-[10px] text-slate-400">
               {faviconResults.icons.map((ic: FaviconIconItem, idx: number) => (
                 <div key={idx} className="bg-[#090b10] p-2 rounded border border-[#232730] flex flex-col items-center">
-                  <img src={`data:image/png;base64,${ic.base64}`} alt={ic.name} className="w-8 h-8 mb-1 object-contain" />
+                  <div className="w-10 h-10 flex items-center justify-center overflow-hidden mb-1">
+                    <img 
+                      src={`data:image/png;base64,${ic.base64}`} 
+                      alt={ic.name} 
+                      className="max-w-full max-h-full object-contain" 
+                    />
+                  </div>
                   <input 
                     type="text" 
                     value={ic.name} 
@@ -114,7 +141,9 @@ export const FaviconModal: React.FC<FaviconModalProps> = ({
                     className="w-full bg-[#111522] border border-[#232730] focus:border-[#2563eb] text-[9px] font-mono text-center text-slate-200 rounded px-1 py-0.5 outline-none truncate"
                     title="Haz clic para renombrar este archivo"
                   />
-                  <span className="text-[9px] text-slate-500 mt-0.5">{ic.size}x{ic.size}</span>
+                  <span className="text-[9px] text-slate-500 mt-0.5">
+                    {ic.width || ic.size}×{ic.height || ic.size}
+                  </span>
                 </div>
               ))}
             </div>
@@ -125,7 +154,7 @@ export const FaviconModal: React.FC<FaviconModalProps> = ({
               className="w-full py-2.5 bg-[#e62429] text-white font-bold text-xs rounded hover:bg-[#ff3b30] transition shadow-md shadow-[#e62429]/30 flex items-center justify-center gap-2"
             >
               <Download className="w-4 h-4" />
-              <span>DESCARGAR PAQUETE FAVICONS (.ZIP)</span>
+              <span>DESCARGAR PAQUETE COMPLETO (.ZIP)</span>
             </button>
           </div>
         )}

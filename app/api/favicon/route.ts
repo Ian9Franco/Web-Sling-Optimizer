@@ -41,27 +41,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Tamaños estándar de favicons incluyendo favicon.ico y versiones personalizadas
-    const sizes = [
-      { name: 'favicon.ico', size: 32 },
-      { name: `${customName}-16x16.png`, size: 16 },
-      { name: `${customName}-32x32.png`, size: 32 },
-      { name: 'apple-touch-icon.png', size: 180 },
-      { name: 'android-chrome-192x192.png', size: 192 },
-      { name: 'android-chrome-512x512.png', size: 512 },
+    // Tamaños estándar de favicons incluyendo favicon.ico, versiones personalizadas y tarjeta OpenGraph
+    const iconTargets = [
+      { name: 'favicon.ico', width: 32, height: 32 },
+      { name: `${customName}-16x16.png`, width: 16, height: 16 },
+      { name: `${customName}-32x32.png`, width: 32, height: 32 },
+      { name: 'apple-touch-icon.png', width: 180, height: 180 },
+      { name: 'android-chrome-192x192.png', width: 192, height: 192 },
+      { name: 'android-chrome-512x512.png', width: 512, height: 512 },
+      { name: 'og-image.png', width: 1200, height: 630 },
     ];
 
-    const results: { name: string; size: number; base64: string }[] = [];
+    const results: { name: string; size: number; width: number; height: number; base64: string }[] = [];
 
-    for (const item of sizes) {
+    for (const item of iconTargets) {
       const resizedBuffer = await sharp(inputBuffer)
-        .resize(item.size, item.size, { fit: 'cover' })
+        .resize(item.width, item.height, { fit: 'cover', position: 'center' })
         .png({ quality: 90 })
         .toBuffer();
 
       results.push({
         name: item.name,
-        size: item.size,
+        size: item.width,
+        width: item.width,
+        height: item.height,
         base64: resizedBuffer.toString('base64'),
       });
     }
@@ -82,11 +85,29 @@ export async function POST(req: NextRequest) {
       2
     );
 
+    const headSnippet = `<!-- Favicons & App Icons -->
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="/${customName}-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/${customName}-32x32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#ffffff">
+
+<!-- Open Graph / Social Sharing (Facebook, WhatsApp, LinkedIn, X) -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mi Sitio Web">
+<meta property="og:image" content="/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="/og-image.png">`;
+
     return NextResponse.json({
       success: true,
       originalName: file.name,
       icons: results,
       manifest: manifestContent,
+      headSnippet,
     });
   } catch (error: unknown) {
     console.error('Error generando favicons:', error);

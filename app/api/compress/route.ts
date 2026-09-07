@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
     const stripExif = formData.get('stripExif') !== 'false';
     const watermarkText = (formData.get('watermarkText') as string || '').trim();
     const customName = (formData.get('customName') as string || '').trim();
+    const itemIndex = (formData.get('index') as string || '').trim();
     
     // Opciones avanzadas de Recorte y Aspect Ratio
     const cropFit = (formData.get('cropFit') as string) || 'inside'; // 'inside' | 'cover' | 'contain'
@@ -200,10 +201,27 @@ export async function POST(req: NextRequest) {
     const mimeType = mimeTypes[actualFormat] || 'image/jpeg';
     const base64Data = `data:${mimeType};base64,${finalBuffer.toString('base64')}`;
 
+    // Resolución de patrones dinámicos de nombre
+    let outputFileName = `${baseName}${targetExt}`;
+    if (customName) {
+      let resolved = customName
+        .replace(/\{original\}|\{name\}/gi, defaultBaseName)
+        .replace(/\{width\}/gi, finalWidth.toString())
+        .replace(/\{height\}/gi, finalHeight.toString())
+        .replace(/\{format\}/gi, actualFormat)
+        .replace(/\{quality\}/gi, quality.toString());
+      if (itemIndex) {
+        resolved = resolved.replace(/\{index\}|\{idx\}/gi, itemIndex);
+      }
+      // Limpiar extensión si vino embebida y concatenar la extensión de salida correspondiente
+      resolved = resolved.replace(/\.[^/.]+$/, "");
+      outputFileName = `${resolved}${targetExt}`;
+    }
+
     return NextResponse.json({
       success: true,
       originalName: file.name,
-      outputFileName: `${baseName}${targetExt}`,
+      outputFileName,
       originalWidth,
       originalHeight,
       finalWidth,

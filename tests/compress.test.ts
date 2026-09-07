@@ -80,6 +80,30 @@ describe('API /api/compress', () => {
     expect(json.compressedSizeBytes).toBeLessThanOrEqual(100 * 1024);
     expect(json.base64Data).toContain('data:image/webp;base64,');
   });
+
+  it('debe aplicar el renombrado por patrones dinámicos correctamente', async () => {
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
+    const imageBuffer = fs.readFileSync(imagePath);
+    const blob = new Blob([imageBuffer], { type: 'image/png' });
+
+    const formData = new FormData();
+    formData.append('file', blob, 'websling_logo.png');
+    formData.append('maxKB', '300');
+    formData.append('format', 'webp');
+    formData.append('customName', '{original}-{width}x{height}-q{quality}');
+
+    const req = new NextRequest('http://localhost:3000/api/compress', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await compressHandler(req);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.outputFileName).toMatch(/^websling_logo-\d+x\d+-q\d+\.webp$/);
+  });
 });
 
 describe('API /api/favicon', () => {
@@ -97,7 +121,7 @@ describe('API /api/favicon', () => {
     expect(res.status).toBe(415);
   });
 
-  it('debe generar el paquete de 6 iconos y el webmanifest correctamente', async () => {
+  it('debe generar el paquete de 7 iconos (con OG Card) y el headSnippet correctamente', async () => {
     const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
     const imageBuffer = fs.readFileSync(imagePath);
     const blob = new Blob([imageBuffer], { type: 'image/png' });
@@ -116,8 +140,11 @@ describe('API /api/favicon', () => {
 
     const json = await res.json();
     expect(json.success).toBe(true);
-    expect(json.icons).toHaveLength(6);
+    expect(json.icons).toHaveLength(7);
+    expect(json.icons.some((i: { name: string }) => i.name === 'og-image.png')).toBe(true);
     expect(json.icons.some((i: { name: string }) => i.name.includes('test-icon'))).toBe(true);
     expect(json.manifest).toContain('Mi Aplicación Web');
+    expect(json.headSnippet).toContain('<link rel="icon"');
+    expect(json.headSnippet).toContain('og:image');
   });
 });

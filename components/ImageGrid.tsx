@@ -1,12 +1,13 @@
 'use client';
 
 import React from 'react';
-import { Download, Trash2 } from 'lucide-react';
+import { Download, Trash2, Code } from 'lucide-react';
 import { ProcessedImage } from '../types/image';
 
 interface ImageGridProps {
   images: ProcessedImage[];
   onUpdateOutputFileName: (id: string, name: string) => void;
+  onSelectSrcset: (img: ProcessedImage) => void;
   onDownloadSingle: (img: ProcessedImage) => void;
   onRemoveSingle: (id: string) => void;
   formatBytes: (bytes: number) => string;
@@ -15,6 +16,7 @@ interface ImageGridProps {
 export const ImageGrid: React.FC<ImageGridProps> = ({
   images,
   onUpdateOutputFileName,
+  onSelectSrcset,
   onDownloadSingle,
   onRemoveSingle,
   formatBytes,
@@ -59,14 +61,25 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
           </div>
 
           {img.status === 'done' && (
-            <button
-              type="button"
-              onClick={() => onDownloadSingle(img)}
-              className="w-full py-1.5 bg-[#e62429] text-white font-mono font-bold text-xs rounded hover:bg-[#ff3b30] transition shadow-md shadow-[#e62429]/30 flex items-center justify-center gap-1.5"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Descargar</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onSelectSrcset(img)}
+                className="py-1.5 px-2 bg-[#0c0d10] text-[#2563eb] hover:text-white border border-[#232730] hover:border-[#2563eb] font-mono text-xs rounded transition flex items-center justify-center gap-1"
+                title="Generar <picture> & srcset responsive"
+              >
+                <Code className="w-3.5 h-3.5" />
+                <span>Srcset</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onDownloadSingle(img)}
+                className="flex-1 py-1.5 bg-[#e62429] text-white font-mono font-bold text-xs rounded hover:bg-[#ff3b30] transition shadow-md shadow-[#e62429]/30 flex items-center justify-center gap-1.5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Descargar</span>
+              </button>
+            </div>
           )}
         </div>
       ))}
