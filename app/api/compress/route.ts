@@ -216,10 +216,11 @@ export async function POST(req: NextRequest) {
       base64Data,
       mimeType,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error procesando imagen:', error);
+    const message = error instanceof Error ? error.message : 'Ocurrió un error al procesar la imagen.';
     return NextResponse.json(
-      { error: error.message || 'Ocurrió un error al procesar la imagen.' },
+      { error: message },
       { status: 500 }
     );
   }

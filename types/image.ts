@@ -30,3 +30,35 @@ export interface ReprocessOverrides {
   cropFit?: CropFit;
   cropPosition?: CropPosition;
 }
+
+export interface FaviconIconItem {
+  name: string;
+  size: number;
+  base64: string;
+}
+
+export interface FaviconResponse {
+  success: boolean;
+  originalName: string;
+  icons: FaviconIconItem[];
+  manifest: string;
+}
+
+export interface FileSystemFileEntryItem {
+  isFile: true;
+  isDirectory: false;
+  file: (success: (file: File) => void, error?: (err: unknown) => void) => void;
+}
+
+export interface FileSystemDirectoryReaderItem {
+  readEntries: (success: (entries: FileSystemEntryItem[]) => void, error?: (err: unknown) => void) => void;
+}
+
+export interface FileSystemDirectoryEntryItem {
+  isFile: false;
+  isDirectory: true;
+  createReader: () => FileSystemDirectoryReaderItem;
+}
+
+export type FileSystemEntryItem = FileSystemFileEntryItem | FileSystemDirectoryEntryItem;
+

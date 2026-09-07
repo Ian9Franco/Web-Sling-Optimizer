@@ -11,7 +11,14 @@ import {
   List
 } from 'lucide-react';
 
-import { ProcessedImage, CropFit, CropPosition, ReprocessOverrides } from '../types/image';
+import { 
+  ProcessedImage, 
+  CropFit, 
+  CropPosition, 
+  ReprocessOverrides,
+  FaviconResponse,
+  FileSystemEntryItem 
+} from '../types/image';
 import { Navbar } from '../components/Navbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { UploadZone } from '../components/UploadZone';
@@ -51,7 +58,7 @@ export default function HomePage() {
   const [isFaviconModalOpen, setIsFaviconModalOpen] = useState(false);
   const [faviconFile, setFaviconFile] = useState<File | null>(null);
   const [faviconCustomName, setFaviconCustomName] = useState<string>('favicon');
-  const [faviconResults, setFaviconResults] = useState<any | null>(null);
+  const [faviconResults, setFaviconResults] = useState<FaviconResponse | null>(null);
   const [isGeneratingFavicons, setIsGeneratingFavicons] = useState(false);
 
   // Helper para formatear bytes legibles
@@ -64,7 +71,7 @@ export default function HomePage() {
   };
 
   // Helper para escanear carpetas recursivamente
-  const scanEntry = async (entry: any): Promise<File[]> => {
+  const scanEntry = async (entry: FileSystemEntryItem): Promise<File[]> => {
     const files: File[] = [];
     if (entry.isFile) {
       return new Promise((resolve) => {
@@ -72,9 +79,9 @@ export default function HomePage() {
       });
     } else if (entry.isDirectory) {
       const dirReader = entry.createReader();
-      const readEntries = async (): Promise<any[]> => {
+      const readEntries = async (): Promise<FileSystemEntryItem[]> => {
         return new Promise((resolve) => {
-          dirReader.readEntries((entries: any[]) => resolve(entries), () => resolve([]));
+          dirReader.readEntries((entries: FileSystemEntryItem[]) => resolve(entries), () => resolve([]));
         });
       };
       let entries = await readEntries();
@@ -93,11 +100,11 @@ export default function HomePage() {
   const processDataTransfer = async (dataTransfer: DataTransfer) => {
     const extractedFiles: File[] = [];
     const items = Array.from(dataTransfer.items || []);
-    const entries: any[] = [];
+    const entries: FileSystemEntryItem[] = [];
 
     for (const item of items) {
-      if (item.webkitGetAsEntry) {
-        const entry = item.webkitGetAsEntry();
+      if ('webkitGetAsEntry' in item && typeof (item as any).webkitGetAsEntry === 'function') {
+        const entry = (item as any).webkitGetAsEntry() as FileSystemEntryItem | null;
         if (entry) entries.push(entry);
       }
     }
@@ -253,11 +260,12 @@ export default function HomePage() {
           base64Data: data.base64Data,
           mimeType: data.mimeType,
         } : img));
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Error en proceso';
         setImages(prev => prev.map(img => img.id === entryId ? {
           ...img,
           status: 'error',
-          errorMessage: err.message || 'Error en proceso'
+          errorMessage: errorMsg
         } : img));
       }
     }
@@ -314,8 +322,9 @@ export default function HomePage() {
           savedPercentage: data.savedPercentage,
           base64Data: data.base64Data,
         } : i));
-      } catch (err: any) {
-        setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error', errorMessage: err.message } : i));
+      } catch (err: unknown) {
+        const errorMsg = err instanceof Error ? err.message : 'Error en proceso';
+        setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'error', errorMessage: errorMsg } : i));
       }
     }
   };
@@ -380,8 +389,9 @@ export default function HomePage() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.error || 'Error al generar favicons');
       setFaviconResults(data);
-    } catch (err: any) {
-      alert(err.message || 'Error procesando favicons');
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Error procesando favicons';
+      alert(errorMsg);
     } finally {
       setIsGeneratingFavicons(false);
     }
@@ -391,7 +401,7 @@ export default function HomePage() {
     if (!faviconResults) return;
     try {
       const zip = new JSZip();
-      faviconResults.icons.forEach((icon: any) => {
+      faviconResults.icons.forEach((icon) => {
         zip.file(icon.name, icon.base64, { base64: true });
       });
       zip.file('site.webmanifest', faviconResults.manifest);
@@ -449,8 +459,9 @@ export default function HomePage() {
         savedPercentage: data.savedPercentage,
         base64Data: data.base64Data,
       } : img));
-    } catch (err: any) {
-      alert('Error recortando imagen: ' + err.message);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
+      alert('Error recortando imagen: ' + errorMsg);
     }
   };
 

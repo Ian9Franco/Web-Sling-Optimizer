@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import { Package, X, Image as ImageIcon, Check, Download } from 'lucide-react';
+import { FaviconResponse, FaviconIconItem } from '../types/image';
 
 interface FaviconModalProps {
   isOpen: boolean;
@@ -9,8 +10,8 @@ interface FaviconModalProps {
   faviconCustomName: string;
   setFaviconCustomName: (val: string) => void;
   faviconFile: File | null;
-  faviconResults: any | null;
-  setFaviconResults: React.Dispatch<React.SetStateAction<any | null>>;
+  faviconResults: FaviconResponse | null;
+  setFaviconResults: React.Dispatch<React.SetStateAction<FaviconResponse | null>>;
   isGeneratingFavicons: boolean;
   handleFaviconProcess: (file: File) => Promise<void>;
   downloadFaviconZip: () => Promise<void>;
@@ -94,7 +95,7 @@ export const FaviconModal: React.FC<FaviconModalProps> = ({
             </div>
 
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-center text-[10px] text-slate-400">
-              {faviconResults.icons.map((ic: any, idx: number) => (
+              {faviconResults.icons.map((ic: FaviconIconItem, idx: number) => (
                 <div key={idx} className="bg-[#090b10] p-2 rounded border border-[#232730] flex flex-col items-center">
                   <img src={`data:image/png;base64,${ic.base64}`} alt={ic.name} className="w-8 h-8 mb-1 object-contain" />
                   <input 
@@ -102,10 +103,13 @@ export const FaviconModal: React.FC<FaviconModalProps> = ({
                     value={ic.name} 
                     onChange={(e) => {
                       const val = e.target.value;
-                      setFaviconResults((prev: any) => ({
-                        ...prev,
-                        icons: prev.icons.map((item: any, i: number) => i === idx ? { ...item, name: val } : item)
-                      }));
+                      setFaviconResults((prev) => {
+                        if (!prev) return null;
+                        return {
+                          ...prev,
+                          icons: prev.icons.map((item, i) => i === idx ? { ...item, name: val } : item)
+                        };
+                      });
                     }}
                     className="w-full bg-[#111522] border border-[#232730] focus:border-[#2563eb] text-[9px] font-mono text-center text-slate-200 rounded px-1 py-0.5 outline-none truncate"
                     title="Haz clic para renombrar este archivo"

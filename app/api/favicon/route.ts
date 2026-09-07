@@ -88,10 +88,11 @@ export async function POST(req: NextRequest) {
       icons: results,
       manifest: manifestContent,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error generando favicons:', error);
+    const message = error instanceof Error ? error.message : 'Error al procesar los favicons.';
     return NextResponse.json(
-      { error: error.message || 'Error al procesar los favicons.' },
+      { error: message },
       { status: 500 }
     );
   }

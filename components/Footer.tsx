@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Globe, Github, Instagram } from 'lucide-react';
+import { Globe, Github } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -28,15 +28,6 @@ export const Footer: React.FC = () => {
           >
             <Github className="w-4 h-4" />
             <span>GitHub</span>
-          </a>
-          <a 
-            href="https://www.instagram.com/ian.franco._/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-slate-400 hover:text-pink-500 transition-colors"
-          >
-            <Instagram className="w-4 h-4" />
-            <span>Instagram</span>
           </a>
         </div>
       </div>
