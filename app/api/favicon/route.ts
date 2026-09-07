@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 
+// Límite de carga serverless (4.5 MB)
+const MAX_FILE_SIZE_BYTES = 4.5 * 1024 * 1024;
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -11,8 +14,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No se ha subido ninguna imagen para generar favicons.' }, { status: 400 });
     }
 
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      return NextResponse.json(
+        { error: `El archivo excede el tamaño máximo permitido de 4.5 MB (${sizeMB} MB).` },
+        { status: 413 }
+      );
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const inputBuffer = Buffer.from(arrayBuffer);
+
+    // Validación de imagen válida
+    try {
+      const metadata = await sharp(inputBuffer).metadata();
+      if (!metadata.format) {
+        return NextResponse.json(
+          { error: 'El archivo no contiene un formato de imagen válido.' },
+          { status: 415 }
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'El archivo no es una imagen válida o está dañado.' },
+        { status: 415 }
+      );
+    }
 
     // Tamaños estándar de favicons incluyendo favicon.ico y versiones personalizadas
     const sizes = [

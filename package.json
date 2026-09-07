@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cli": "node scripts/cli/resize.js",
+    "cli:batch": "node scripts/cli/batch-resize.js"
   },
   "dependencies": {
     "jszip": "^3.10.1",
