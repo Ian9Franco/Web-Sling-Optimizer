@@ -128,6 +128,33 @@ describe('API /api/compress', () => {
     expect(json.qualityApplied).toBe(75);
     expect(json.formatApplied).toBe('JPG');
   });
+
+  it('debe aplicar Super-Resolución (upscaleFactor 2x) y Claridad HD correctamente', async () => {
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
+    const imageBuffer = fs.readFileSync(imagePath);
+    const blob = new Blob([imageBuffer], { type: 'image/png' });
+
+    const formData = new FormData();
+    formData.append('file', blob, 'websling_logo.png');
+    formData.append('upscaleFactor', '2');
+    formData.append('clarity', 'true');
+    formData.append('format', 'webp');
+
+    const req = new NextRequest('http://localhost:3000/api/compress', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await compressHandler(req);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.upscaleApplied).toBe(2);
+    expect(json.clarityApplied).toBe(true);
+    expect(json.finalWidth).toBe(json.originalWidth * 2);
+    expect(json.finalHeight).toBe(json.originalHeight * 2);
+  });
 });
 
 describe('API /api/favicon', () => {

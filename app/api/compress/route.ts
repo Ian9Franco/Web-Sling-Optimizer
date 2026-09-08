@@ -30,6 +30,10 @@ export async function POST(req: NextRequest) {
     const cropFit = (formData.get('cropFit') as string) || 'inside'; // 'inside' | 'cover' | 'contain'
     const cropPosition = (formData.get('cropPosition') as string) || 'center'; // 'center' | 'top' | 'bottom' | 'left' | 'right' | 'entropy' | 'attention'
 
+    // Opciones de Super-Resolución (Lanczos3 Upscaling) & Claridad HD
+    const upscaleFactor = parseInt((formData.get('upscaleFactor') as string) || '1', 10); // 1 | 2 | 4
+    const applyClarity = formData.get('clarity') === 'true';
+
     // 1. Validación: Archivo presente
     if (!file) {
       return NextResponse.json({ error: 'No se ha subido ningún archivo.' }, { status: 400 });
@@ -74,11 +78,16 @@ export async function POST(req: NextRequest) {
 
     let baseName = customName ? customName.replace(/\.[^/.]+$/, "") : defaultBaseName;
 
+    // Si es un archivo RAW de cámara (DNG, RAW, CR2, NEF), el navegador no puede renderizarlo directamente en original;
+    // por defecto lo exportamos a JPG limpio si no se seleccionó otro formato.
+    const isRawCameraFile = ['.dng', '.raw', '.cr2', '.nef', '.tif', '.tiff'].includes(ext);
+
     let targetExt = ext;
     if (preferredFormat === 'jpg' || preferredFormat === 'jpeg') targetExt = '.jpg';
     else if (preferredFormat === 'webp') targetExt = '.webp';
     else if (preferredFormat === 'png') targetExt = '.png';
     else if (preferredFormat === 'avif') targetExt = '.avif';
+    else if (preferredFormat === 'original' && isRawCameraFile) targetExt = '.jpg';
 
     const maxSizeBytes = maxKB * 1024;
     let quality = hasExplicitQuality ? Math.max(1, Math.min(100, rawQuality!)) : 90;
@@ -133,6 +142,8 @@ export async function POST(req: NextRequest) {
     if (applyGrayscale) {
       transformPipeline = transformPipeline.grayscale();
     }
+
+    // Super-Resolución / Upscaling (2x, 4x) o Redimensionamiento personalizado
     if (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0)) {
       transformPipeline = transformPipeline.resize(
         maxWidth > 0 ? maxWidth : undefined,
@@ -144,7 +155,23 @@ export async function POST(req: NextRequest) {
           kernel: sharp.kernel.lanczos3,
         }
       );
+    } else if (upscaleFactor > 1 && originalWidth > 0 && originalHeight > 0) {
+      // Upscaling con interpolación Lanczos3 de alta fidelidad
+      const targetUpscaleW = Math.round(originalWidth * upscaleFactor);
+      const targetUpscaleH = Math.round(originalHeight * upscaleFactor);
+      transformPipeline = transformPipeline.resize(targetUpscaleW, targetUpscaleH, {
+        fit: 'inside',
+        kernel: sharp.kernel.lanczos3,
+      });
     }
+
+    // Claridad HD / Unsharp Masking + Reducción de ruido sutil
+    if (applyClarity) {
+      transformPipeline = transformPipeline
+        .sharpen({ sigma: 1.2, m1: 1.6, m2: 0.7 })
+        .median(1);
+    }
+
     if (watermarkSvgBuffer) {
       transformPipeline = transformPipeline.composite([
         {
@@ -163,6 +190,9 @@ export async function POST(req: NextRequest) {
       rotateAngle > 0 ||
       flipHorizontal ||
       applyGrayscale ||
+      applyClarity ||
+      upscaleFactor > 1 ||
+      isRawCameraFile ||
       watermarkText !== '' ||
       (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0)) ||
       (preferredFormat !== 'original' && preferredFormat !== ext.replace('.', ''))
@@ -300,6 +330,8 @@ export async function POST(req: NextRequest) {
       savedPercentage,
       base64Data,
       mimeType,
+      upscaleApplied: upscaleFactor > 1 ? upscaleFactor : undefined,
+      clarityApplied: applyClarity || undefined,
     });
   } catch (error: unknown) {
     console.error('Error procesando imagen:', error);

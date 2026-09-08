@@ -101,9 +101,16 @@ export const ImageTable: React.FC<ImageTableProps> = ({
               <td className="py-2 px-2 align-middle text-slate-400 whitespace-nowrap text-[11px]">
                 {img.status === 'done' ? (
                   <div>
-                    <span className="text-slate-200 font-medium">
-                      {img.finalWidth} × {img.finalHeight} px
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-200 font-medium">
+                        {img.finalWidth} × {img.finalHeight} px
+                      </span>
+                      {img.upscaleApplied && img.upscaleApplied > 1 && (
+                        <span className="text-[9px] font-mono bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold px-1 rounded">
+                          🌟 {img.upscaleApplied}X
+                        </span>
+                      )}
+                    </div>
                     {(img.originalWidth > 0 && img.originalHeight > 0 && (img.finalWidth !== img.originalWidth || img.finalHeight !== img.originalHeight)) ? (
                       <span className="block text-[9.5px] text-amber-400">
                         Orig: {img.originalWidth} × {img.originalHeight}
@@ -160,10 +167,17 @@ export const ImageTable: React.FC<ImageTableProps> = ({
               {/* Columna Calidad */}
               <td className="py-2 px-2 align-middle text-slate-400 whitespace-nowrap text-[10.5px]">
                 {img.status === 'done' ? (
-                  <span className="inline-flex items-center gap-1 whitespace-nowrap bg-[#0c0d10] border border-[#232730] px-1.5 py-0.5 rounded text-[10px]">
-                    <span className="text-slate-200 font-semibold">{img.qualityApplied}%</span>
-                    <span className="text-slate-400">({img.formatApplied})</span>
-                  </span>
+                  <div className="space-y-0.5">
+                    <span className="inline-flex items-center gap-1 whitespace-nowrap bg-[#0c0d10] border border-[#232730] px-1.5 py-0.5 rounded text-[10px]">
+                      <span className="text-slate-200 font-semibold">{img.qualityApplied}%</span>
+                      <span className="text-slate-400">({img.formatApplied})</span>
+                    </span>
+                    {img.clarityApplied && (
+                      <span className="block text-[9px] font-mono text-amber-400/90 font-medium">
+                        ✨ Claridad HD
+                      </span>
+                    )}
+                  </div>
                 ) : '-'}
               </td>
 

@@ -38,6 +38,10 @@ interface SettingsPanelProps {
   setCropFit: (val: CropFit) => void;
   cropPosition: CropPosition;
   setCropPosition: (val: CropPosition) => void;
+  upscaleFactor: 1 | 2 | 4;
+  setUpscaleFactor: (val: 1 | 2 | 4) => void;
+  clarity: boolean;
+  setClarity: (val: boolean) => void;
   format: string;
   setFormat: (val: string) => void;
   rotate: number;
@@ -81,6 +85,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   setCropFit,
   cropPosition,
   setCropPosition,
+  upscaleFactor,
+  setUpscaleFactor,
+  clarity,
+  setClarity,
   format,
   setFormat,
   rotate,
@@ -132,6 +140,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       customHeight,
       cropFit,
       cropPosition,
+      upscaleFactor,
+      clarity,
     };
     const updated = [...customPresets, newPreset];
     setCustomPresets(updated);
@@ -163,6 +173,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setCustomHeight(preset.customHeight);
     setCropFit(preset.cropFit);
     setCropPosition(preset.cropPosition);
+    if (preset.upscaleFactor) setUpscaleFactor(preset.upscaleFactor);
+    if (preset.clarity !== undefined) setClarity(preset.clarity);
     reprocessBatch({
       maxKB: preset.maxKB,
       format: preset.format,
@@ -171,6 +183,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       customHeight: preset.customHeight,
       cropFit: preset.cropFit,
       cropPosition: preset.cropPosition,
+      upscaleFactor: preset.upscaleFactor,
+      clarity: preset.clarity,
     });
   };
 
@@ -598,6 +612,65 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               )}
             </div>
           )}
+        </div>
+
+        {/* Super-Resolución (Upscaling) & Claridad HD */}
+        <div className="space-y-3 pt-3 border-t border-[#232730]">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Super-Resolución & Claridad</span>
+            </label>
+            <span className="text-[9px] font-mono bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
+              Lanczos3 HD
+            </span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-1.5 font-mono text-xs">
+            {[
+              { factor: 1 as const, label: '1x Normal', desc: 'Sin escala' },
+              { factor: 2 as const, label: '2x HD', desc: '+100% res' },
+              { factor: 4 as const, label: '4x 4K', desc: '+300% res' },
+            ].map((item) => (
+              <button
+                key={item.factor}
+                type="button"
+                onClick={() => {
+                  setUpscaleFactor(item.factor);
+                  reprocessBatch({ upscaleFactor: item.factor, clarity });
+                }}
+                className={`py-1.5 px-1 rounded border text-center transition flex flex-col items-center justify-center ${
+                  upscaleFactor === item.factor
+                    ? 'bg-amber-500/20 border-amber-500 text-amber-300 font-bold shadow-sm shadow-amber-500/20'
+                    : 'bg-[#0c0d10] border-[#232730] text-slate-400 hover:border-slate-600'
+                }`}
+              >
+                <span className="text-xs">{item.label}</span>
+                <span className="text-[9px] opacity-70">{item.desc}</span>
+              </button>
+            ))}
+          </div>
+
+          <label className="flex items-start gap-2 cursor-pointer text-slate-300 pt-1 font-mono text-xs">
+            <input
+              type="checkbox"
+              checked={clarity}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setClarity(checked);
+                reprocessBatch({ upscaleFactor, clarity: checked });
+              }}
+              className="mt-0.5 rounded accent-amber-500"
+            />
+            <div className="space-y-0.5">
+              <span className="flex items-center gap-1 font-bold text-slate-200">
+                <span>Claridad HD & Filtro Antidesenfoque</span>
+              </span>
+              <p className="text-[10px] text-slate-500 leading-tight">
+                Aplica Unsharp Masking + Denoise para resaltar texturas y bordes sin artefactos.
+              </p>
+            </div>
+          </label>
         </div>
 
         {/* Formato de Salida */}

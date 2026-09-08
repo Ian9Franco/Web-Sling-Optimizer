@@ -29,6 +29,8 @@ interface UseImageProcessorOptions {
   customNamePattern: string;
   cropFit: CropFit;
   cropPosition: CropPosition;
+  upscaleFactor?: 1 | 2 | 4;
+  clarity?: boolean;
 }
 
 const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
@@ -74,6 +76,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     customNamePattern,
     cropFit,
     cropPosition,
+    upscaleFactor = 1,
+    clarity = false,
   } = options;
 
   const [images, setImages] = useState<ProcessedImage[]>([]);
@@ -87,7 +91,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
 
   const handleFiles = async (filesList: FileList | File[]) => {
     const validFiles = Array.from(filesList).filter(file => 
-      file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|avif|tiff|bmp)$/i.test(file.name)
+      file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|avif|tiff|tif|bmp|dng|raw|cr2|nef)$/i.test(file.name)
     );
 
     if (validFiles.length === 0) return;
@@ -124,7 +128,9 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       // Extraer siempre dimensiones reales de la imagen original en el cliente
       const { width: origWidth, height: origHeight } = await getImageDimensions(previewUrl);
 
-      // Si el usuario eligió Sin Pérdida y ningún filtro/recorte/conversión, conservar el archivo 100% original sin tocar
+      const isRawCamera = /\.(dng|raw|cr2|nef|tif|tiff)$/i.test(file.name);
+
+      // Si el usuario eligió Sin Pérdida y ningún filtro/recorte/conversión/upscaling/RAW, conservar el archivo 100% original sin tocar
       const isCustomTransform = 
         qualityMode !== 'preserve' ||
         resizeMode !== 'none' ||
@@ -132,6 +138,9 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         rotate !== 0 ||
         flip ||
         grayscale ||
+        isRawCamera ||
+        (upscaleFactor > 1) ||
+        clarity ||
         Boolean(watermarkText && watermarkText.trim().length > 0);
 
       if (!isCustomTransform) {
@@ -185,6 +194,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formData.append('index', (i + 1).toString());
         formData.append('cropFit', cropFit);
         formData.append('cropPosition', cropPosition);
+        formData.append('upscaleFactor', upscaleFactor.toString());
+        formData.append('clarity', clarity ? 'true' : 'false');
 
         const res = await fetch('/api/compress', {
           method: 'POST',
@@ -211,6 +222,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
           savedPercentage: data.savedPercentage,
           base64Data: data.base64Data,
           mimeType: data.mimeType,
+          upscaleApplied: data.upscaleApplied,
+          clarityApplied: data.clarityApplied,
         } : img));
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : 'Error en proceso';
@@ -237,12 +250,16 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     const targetFormat = overrides?.format ?? format;
     const targetFit = overrides?.cropFit ?? cropFit;
     const targetPosition = overrides?.cropPosition ?? cropPosition;
+    const targetUpscale = overrides?.upscaleFactor ?? upscaleFactor;
+    const targetClarity = overrides?.clarity ?? clarity;
 
     const list = [...images];
     if (list.length === 0) return;
 
     await asyncPool(3, list, async (img, idx) => {
       setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'processing' } : i));
+
+      const isRawCamera = /\.(dng|raw|cr2|nef|tif|tiff)$/i.test(img.originalName);
 
       const isCustomTransform = 
         targetModeQ !== 'preserve' ||
@@ -251,6 +268,9 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         rotate !== 0 ||
         flip ||
         grayscale ||
+        isRawCamera ||
+        (targetUpscale > 1) ||
+        targetClarity ||
         Boolean(watermarkText && watermarkText.trim().length > 0);
 
       if (!isCustomTransform) {
@@ -306,6 +326,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formData.append('index', (idx + 1).toString());
         formData.append('cropFit', targetFit);
         formData.append('cropPosition', targetPosition);
+        formData.append('upscaleFactor', targetUpscale.toString());
+        formData.append('clarity', targetClarity ? 'true' : 'false');
 
         const res = await fetch('/api/compress', { method: 'POST', body: formData });
         const data = await res.json();
@@ -338,6 +360,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
             formatApplied: data.formatApplied,
             savedPercentage: data.savedPercentage,
             base64Data: data.base64Data,
+            upscaleApplied: data.upscaleApplied,
+            clarityApplied: data.clarityApplied,
           };
         }));
       } catch (err: unknown) {
@@ -459,6 +483,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       formData.append('watermarkText', watermarkText);
       formData.append('cropFit', 'cover');
       formData.append('cropPosition', cropPosition);
+      formData.append('upscaleFactor', upscaleFactor.toString());
+      formData.append('clarity', clarity ? 'true' : 'false');
 
       const res = await fetch('/api/compress', { method: 'POST', body: formData });
       const data = await res.json();
@@ -485,10 +511,13 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formatApplied: data.formatApplied,
         savedPercentage: data.savedPercentage,
         base64Data: data.base64Data,
+        upscaleApplied: data.upscaleApplied,
+        clarityApplied: data.clarityApplied,
       } : img));
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
-      alert('Error recortando imagen: ' + errorMsg);
+      console.error('Error recortando imagen:', errorMsg);
+      setImages(prev => prev.map(img => img.id === targetImg.id ? { ...img, status: 'error', errorMessage: errorMsg } : img));
     }
   };
 
@@ -510,6 +539,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       formData.append('watermarkText', watermarkText);
       formData.append('cropFit', cropFit);
       formData.append('cropPosition', cropPosition);
+      formData.append('upscaleFactor', upscaleFactor.toString());
+      formData.append('clarity', clarity ? 'true' : 'false');
 
       const res = await fetch('/api/compress', { method: 'POST', body: formData });
       const data = await res.json();
@@ -535,6 +566,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formatApplied: data.formatApplied,
         savedPercentage: data.savedPercentage,
         base64Data: data.base64Data,
+        upscaleApplied: data.upscaleApplied,
+        clarityApplied: data.clarityApplied,
       };
 
       setImages(prev => prev.map(img => img.id === targetImg.id ? updatedImg : img));

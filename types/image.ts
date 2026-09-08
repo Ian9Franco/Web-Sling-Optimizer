@@ -17,6 +17,8 @@ export interface ProcessedImage {
   previewUrl: string;
   status: 'pending' | 'processing' | 'done' | 'error';
   errorMessage?: string;
+  upscaleApplied?: number;
+  clarityApplied?: boolean;
 }
 
 export type CropFit = 'inside' | 'cover';
@@ -32,6 +34,8 @@ export interface ReprocessOverrides {
   format?: string;
   cropFit?: CropFit;
   cropPosition?: CropPosition;
+  upscaleFactor?: 1 | 2 | 4;
+  clarity?: boolean;
 }
 
 export interface CustomPreset {
@@ -46,6 +50,8 @@ export interface CustomPreset {
   customHeight: string;
   cropFit: CropFit;
   cropPosition: CropPosition;
+  upscaleFactor?: 1 | 2 | 4;
+  clarity?: boolean;
 }
 
 export interface FaviconIconItem {

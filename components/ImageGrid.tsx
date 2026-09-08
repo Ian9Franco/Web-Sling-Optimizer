@@ -85,13 +85,27 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
             </div>
             {img.status === 'done' && (
               <>
-                <div className="text-slate-400 flex justify-between text-[11px]">
+                <div className="text-slate-400 flex justify-between items-center text-[11px]">
                   <span>Dimensiones:</span>
-                  <span className="text-slate-200">{img.finalWidth} × {img.finalHeight} px</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-200">{img.finalWidth} × {img.finalHeight} px</span>
+                    {img.upscaleApplied && img.upscaleApplied > 1 && (
+                      <span className="text-[9px] font-mono bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold px-1 rounded">
+                        🌟 {img.upscaleApplied}X
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="text-slate-400 flex justify-between text-[11px]">
+                <div className="text-slate-400 flex justify-between items-center text-[11px]">
                   <span>Calidad:</span>
-                  <span className="text-slate-200 font-semibold">{img.qualityApplied}% ({img.formatApplied})</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-200 font-semibold">{img.qualityApplied}% ({img.formatApplied})</span>
+                    {img.clarityApplied && (
+                      <span className="text-[9px] font-mono text-amber-400 font-medium">
+                        ✨ Claridad
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="text-slate-400 flex justify-between text-[11px]">
                   <span>Peso:</span>

@@ -27,12 +27,14 @@ export default function HomePage() {
   const [maxKB, setMaxKB] = useState<number>(200);
   const [format, setFormat] = useState<string>('original');
 
-  // Redimensionamiento y Recorte
+  // Redimensionamiento, Recorte y Super-Resolución
   const [resizeMode, setResizeMode] = useState<'none' | 'custom'>('none');
   const [customWidth, setCustomWidth] = useState<string>('');
   const [customHeight, setCustomHeight] = useState<string>('');
   const [cropFit, setCropFit] = useState<CropFit>('inside');
   const [cropPosition, setCropPosition] = useState<CropPosition>('center');
+  const [upscaleFactor, setUpscaleFactor] = useState<1 | 2 | 4>(1);
+  const [clarity, setClarity] = useState<boolean>(false);
 
   // Edición y Seguridad
   const [rotate, setRotate] = useState<number>(0);
@@ -97,6 +99,8 @@ export default function HomePage() {
     customNamePattern,
     cropFit,
     cropPosition,
+    upscaleFactor,
+    clarity,
   });
 
   // Generador de Favicons
@@ -215,6 +219,10 @@ export default function HomePage() {
               setCropFit={setCropFit}
               cropPosition={cropPosition}
               setCropPosition={setCropPosition}
+              upscaleFactor={upscaleFactor}
+              setUpscaleFactor={setUpscaleFactor}
+              clarity={clarity}
+              setClarity={setClarity}
               format={format}
               setFormat={setFormat}
               rotate={rotate}

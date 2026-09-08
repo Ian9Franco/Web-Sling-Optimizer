@@ -36,7 +36,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.tiff,.bmp"
+        accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.tiff,.tif,.bmp,.dng,.raw,.cr2,.nef"
         className="hidden"
         onChange={(e) => e.target.files && onFilesSelected(e.target.files)}
       />
@@ -49,7 +49,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         SOLTAR IMÁGENES ACÁ O PEGAR (CTRL + V)
       </h3>
       <p className="text-slate-500 text-xs font-mono">
-        Soporta JPG, PNG, WebP, AVIF, TIFF, BMP &bull; Sin límite de peso (Pre-optimización automática para Vercel)
+        Soporta JPG, PNG, WebP, AVIF, RAW / DNG, TIFF &bull; Sin límite de peso (Pre-optimización inteligente)
       </p>
     </div>
   );
