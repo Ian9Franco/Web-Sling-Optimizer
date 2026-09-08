@@ -12,11 +12,20 @@ import {
   BookmarkPlus,
   Trash2,
   Check,
-  X
+  X,
+  Wand2,
+  Sparkles
 } from 'lucide-react';
-import { CropFit, CropPosition, ReprocessOverrides, CustomPreset } from '../types/image';
+import { CropFit, CropPosition, ReprocessOverrides, CustomPreset, ProcessedImage } from '../types/image';
+import { resolveFileNamePattern } from '../utils/naming';
 
 interface SettingsPanelProps {
+  preserveQuality: boolean;
+  setPreserveQuality: (val: boolean) => void;
+  qualityMode: 'preserve' | 'manual' | 'maxKB';
+  setQualityMode: (mode: 'preserve' | 'manual' | 'maxKB') => void;
+  quality: number;
+  setQuality: (val: number) => void;
   maxKB: number;
   setMaxKB: (val: number) => void;
   resizeMode: 'none' | 'custom';
@@ -44,6 +53,9 @@ interface SettingsPanelProps {
   customNamePattern: string;
   setCustomNamePattern: React.Dispatch<React.SetStateAction<string>>;
   reprocessBatch: (overrides?: ReprocessOverrides) => Promise<void>;
+  images: ProcessedImage[];
+  onApplyBatchRename: (pattern: string) => void;
+  onApplyBatchSlugify?: () => void;
   totalImages: number;
   totalOriginalBytes: number;
   totalCompressedBytes: number;
@@ -51,6 +63,12 @@ interface SettingsPanelProps {
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
+  preserveQuality,
+  setPreserveQuality,
+  qualityMode,
+  setQualityMode,
+  quality,
+  setQuality,
   maxKB,
   setMaxKB,
   resizeMode,
@@ -78,6 +96,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   customNamePattern,
   setCustomNamePattern,
   reprocessBatch,
+  images,
+  onApplyBatchRename,
+  onApplyBatchSlugify,
   totalImages,
   totalOriginalBytes,
   totalCompressedBytes,
@@ -213,8 +234,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <button
             type="button"
             onClick={() => { 
+              setPreserveQuality(false);
               setMaxKB(100); setResizeMode('custom'); setCustomWidth('800'); setCustomHeight('800'); setFormat('webp'); setCropFit('cover');
-              reprocessBatch({ maxKB: 100, resizeMode: 'custom', customWidth: '800', customHeight: '800', format: 'webp', cropFit: 'cover' });
+              reprocessBatch({ preserveQuality: false, maxKB: 100, resizeMode: 'custom', customWidth: '800', customHeight: '800', format: 'webp', cropFit: 'cover' });
             }}
             className="p-2 text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 text-left transition"
           >
@@ -224,8 +246,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <button
             type="button"
             onClick={() => { 
+              setPreserveQuality(false);
               setMaxKB(200); setResizeMode('custom'); setCustomWidth('1080'); setCustomHeight('1080'); setFormat('jpg'); setCropFit('cover');
-              reprocessBatch({ maxKB: 200, resizeMode: 'custom', customWidth: '1080', customHeight: '1080', format: 'jpg', cropFit: 'cover' });
+              reprocessBatch({ preserveQuality: false, maxKB: 200, resizeMode: 'custom', customWidth: '1080', customHeight: '1080', format: 'jpg', cropFit: 'cover' });
             }}
             className="p-2 text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 text-left transition"
           >
@@ -235,8 +258,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <button
             type="button"
             onClick={() => { 
+              setPreserveQuality(false);
               setMaxKB(50); setResizeMode('custom'); setCustomWidth('500'); setCustomHeight(''); setFormat('webp'); setCropFit('inside');
-              reprocessBatch({ maxKB: 50, resizeMode: 'custom', customWidth: '500', customHeight: '', format: 'webp', cropFit: 'inside' });
+              reprocessBatch({ preserveQuality: false, maxKB: 50, resizeMode: 'custom', customWidth: '500', customHeight: '', format: 'webp', cropFit: 'inside' });
             }}
             className="p-2 text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] rounded text-slate-300 text-left transition"
           >
@@ -285,39 +309,152 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </h2>
         </div>
 
-        {/* Límite de Peso */}
-        <div className="space-y-3">
+        {/* Modo de Compresión: Preservar vs Calidad (%) vs Límite KB */}
+        <div className="space-y-2.5">
           <div className="flex justify-between items-center text-xs font-mono">
-            <span className="text-slate-400">Peso Máximo Objetivo:</span>
-            <span className="text-[#e62429] font-bold text-sm">{maxKB} KB</span>
+            <span className="text-slate-400">Tratamiento de Calidad:</span>
+            <span className={
+              qualityMode === 'preserve' 
+                ? 'text-emerald-400 font-bold' 
+                : qualityMode === 'manual'
+                  ? 'text-[#2563eb] font-bold'
+                  : 'text-[#e62429] font-bold'
+            }>
+              {qualityMode === 'preserve' 
+                ? '100% Original' 
+                : qualityMode === 'manual'
+                  ? `Calidad: ${quality}%`
+                  : `Objetivo: ${maxKB} KB`}
+            </span>
           </div>
 
-          <input
-            type="range"
-            min="30"
-            max="1000"
-            step="10"
-            value={maxKB}
-            onChange={(e) => setMaxKB(parseInt(e.target.value))}
-            className="w-full h-1.5 bg-[#232730] rounded-lg appearance-none cursor-pointer"
-          />
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => { setQualityMode('preserve'); setPreserveQuality(true); }}
+              className={`flex items-center justify-center gap-1 py-1.5 px-1.5 rounded border font-mono text-[11px] transition ${
+                qualityMode === 'preserve'
+                  ? 'bg-emerald-600 border-emerald-500 text-white font-bold shadow-md shadow-emerald-600/30'
+                  : 'bg-[#0c0d10] border-[#232730] text-slate-400 hover:border-slate-600'
+              }`}
+              title="No reduce la calidad visual. Mantiene máxima nitidez sin degradación."
+            >
+              <ShieldCheck className="w-3 h-3" />
+              <span>Sin Pérdida</span>
+            </button>
 
-          <div className="grid grid-cols-4 gap-1.5 pt-1">
-            {[100, 200, 300, 500].map(val => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => setMaxKB(val)}
-                className={`text-[11px] font-mono py-1.5 rounded border transition ${
-                  maxKB === val
-                    ? 'bg-[#e62429] border-[#e62429] text-white font-bold shadow-md shadow-[#e62429]/30'
-                    : 'bg-[#14161b] border-[#232730] text-slate-400 hover:border-slate-600'
-                }`}
-              >
-                {val} KB
-              </button>
-            ))}
+            <button
+              type="button"
+              onClick={() => { setQualityMode('manual'); setPreserveQuality(false); }}
+              className={`flex items-center justify-center gap-1 py-1.5 px-1.5 rounded border font-mono text-[11px] transition ${
+                qualityMode === 'manual'
+                  ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold shadow-md shadow-[#2563eb]/30'
+                  : 'bg-[#0c0d10] border-[#232730] text-slate-400 hover:border-slate-600'
+              }`}
+              title="Define directamente el porcentaje de calidad de compresión (ej. 80%, 85%)."
+            >
+              <Sliders className="w-3 h-3" />
+              <span>Calidad %</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setQualityMode('maxKB'); setPreserveQuality(false); }}
+              className={`flex items-center justify-center gap-1 py-1.5 px-1.5 rounded border font-mono text-[11px] transition ${
+                qualityMode === 'maxKB'
+                  ? 'bg-[#e62429] border-[#e62429] text-white font-bold shadow-md shadow-[#e62429]/30'
+                  : 'bg-[#0c0d10] border-[#232730] text-slate-400 hover:border-slate-600'
+              }`}
+              title="Reduce progresivamente la calidad hasta que el archivo pese menos de X KB."
+            >
+              <Zap className="w-3 h-3" />
+              <span>Límite KB</span>
+            </button>
           </div>
+
+          {qualityMode === 'preserve' && (
+            <div className="bg-[#0c0d10] border border-emerald-500/20 p-2.5 rounded text-[11px] font-mono text-slate-300 space-y-1">
+              <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Calidad visual intacta</span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                La nitidez y compresión original no se tocan. La reducción de calidad está desactivada.
+              </p>
+            </div>
+          )}
+
+          {qualityMode === 'manual' && (
+            <div className="space-y-3 pt-1">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-slate-400">Calidad de Salida:</span>
+                <span className="text-[#2563eb] font-bold text-sm">{quality}%</span>
+              </div>
+
+              <input
+                type="range"
+                min="10"
+                max="100"
+                step="5"
+                value={quality}
+                onChange={(e) => setQuality(parseInt(e.target.value))}
+                className="w-full h-1.5 bg-[#232730] rounded-lg appearance-none cursor-pointer accent-[#2563eb]"
+              />
+
+              <div className="grid grid-cols-5 gap-1 pt-0.5">
+                {[60, 75, 80, 85, 90].map(val => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setQuality(val)}
+                    className={`text-[10px] font-mono py-1 rounded border transition ${
+                      quality === val
+                        ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold shadow-sm shadow-[#2563eb]/30'
+                        : 'bg-[#14161b] border-[#232730] text-slate-400 hover:border-slate-600'
+                    }`}
+                  >
+                    {val}%
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {qualityMode === 'maxKB' && (
+            <div className="space-y-3 pt-1">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-slate-400">Peso Máximo Objetivo:</span>
+                <span className="text-[#e62429] font-bold text-sm">{maxKB} KB</span>
+              </div>
+
+              <input
+                type="range"
+                min="30"
+                max="1000"
+                step="10"
+                value={maxKB}
+                onChange={(e) => setMaxKB(parseInt(e.target.value))}
+                className="w-full h-1.5 bg-[#232730] rounded-lg appearance-none cursor-pointer accent-[#e62429]"
+              />
+
+              <div className="grid grid-cols-4 gap-1.5 pt-0.5">
+                {[100, 200, 300, 500].map(val => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => setMaxKB(val)}
+                    className={`text-[11px] font-mono py-1.5 rounded border transition ${
+                      maxKB === val
+                        ? 'bg-[#e62429] border-[#e62429] text-white font-bold shadow-md shadow-[#e62429]/30'
+                        : 'bg-[#14161b] border-[#232730] text-slate-400 hover:border-slate-600'
+                    }`}
+                  >
+                    {val} KB
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Control de Dimensiones */}
@@ -555,29 +692,44 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           </div>
 
           {/* Nombre de Archivo Personalizado / Patrón Dinámico */}
-          <div className="space-y-1.5 pt-1">
+          <div className="space-y-2 pt-2 border-t border-[#232730]">
             <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
-              <label className="flex items-center gap-1">
+              <label className="flex items-center gap-1 text-slate-300 font-bold">
                 <Copy className="w-3 h-3 text-[#2563eb]" />
-                <span>Patrón de Renombrado en Lote (opcional)</span>
+                <span>Patrón de Renombrado en Lote</span>
               </label>
+              {onApplyBatchSlugify && (
+                <button
+                  type="button"
+                  onClick={onApplyBatchSlugify}
+                  className="flex items-center gap-1 text-[#2563eb] hover:text-[#3b82f6] transition"
+                  title="Limpiar automáticamente nombres a kebab-case y generar Alt text para todos"
+                >
+                  <Wand2 className="w-3 h-3" />
+                  <span>Auto-Slugify</span>
+                </button>
+              )}
             </div>
+            
             <input
               type="text"
-              placeholder="Ej. {original}-{width}x{height}"
+              placeholder="Ej. {slug}-{width}x{height}"
               value={customNamePattern}
               onChange={(e) => setCustomNamePattern(e.target.value)}
               className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 text-white outline-none"
             />
+
             {/* Tokens rápidos */}
             <div className="flex flex-wrap gap-1 text-[9px] font-mono">
               {[
                 { label: '{original}', token: '{original}' },
+                { label: '{slug}', token: '{slug}' },
                 { label: '{width}', token: '{width}' },
                 { label: '{height}', token: '{height}' },
                 { label: '{quality}', token: '{quality}' },
                 { label: '{format}', token: '{format}' },
                 { label: '{index}', token: '{index}' },
+                { label: '{0index}', token: '{0index}' },
               ].map((t) => (
                 <button
                   key={t.token}
@@ -590,11 +742,50 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </button>
               ))}
             </div>
-            {customNamePattern && (
-              <span className="text-[9px] text-slate-500 font-mono block truncate">
-                Vista previa: foto-800x600.webp
-              </span>
-            )}
+
+            {/* Vista previa dinámica de renombramiento cuando se ingresa un patrón */}
+            {customNamePattern.trim() ? (() => {
+              const hasRealImage = images && images.length > 0;
+              const sampleImg = hasRealImage 
+                ? images[0] 
+                : { 
+                    originalName: 'foto-ejemplo.jpg', 
+                    outputFileName: 'foto-ejemplo.jpg', 
+                    originalWidth: 1920,
+                    originalHeight: 1080,
+                    finalWidth: 1200, 
+                    finalHeight: 800, 
+                    qualityApplied: quality || 85,
+                    formatApplied: format !== 'original' ? format.toUpperCase() : 'WEBP' 
+                  };
+              const previewResult = resolveFileNamePattern(customNamePattern, sampleImg as any, 0);
+
+              return (
+                <div className="bg-[#0c0d10] border border-[#232730] p-2.5 rounded text-[10px] font-mono space-y-1">
+                  <div className="text-slate-400 text-[9px] uppercase tracking-wider flex items-center justify-between">
+                    <span>{hasRealImage ? 'Vista Previa (1ra imagen):' : 'Ejemplo de Salida:'}</span>
+                    <span className="text-[#2563eb] font-normal">{hasRealImage ? 'En vivo' : 'Simulación'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate text-slate-300 pt-0.5">
+                    <span className="text-slate-400 truncate">{sampleImg.originalName}</span>
+                    <span className="text-[#2563eb] font-bold">➔</span>
+                    <span className="text-emerald-400 font-bold truncate">{previewResult}</span>
+                  </div>
+                </div>
+              );
+            })() : null}
+
+            {/* Botón de aplicación inmediata al lote */}
+            <button
+              type="button"
+              onClick={() => onApplyBatchRename(customNamePattern)}
+              disabled={!customNamePattern.trim() || totalImages === 0}
+              className="w-full py-2 px-2 bg-[#2563eb] hover:bg-[#3b82f6] disabled:opacity-40 disabled:hover:bg-[#2563eb] text-white font-mono text-xs font-bold rounded transition flex items-center justify-center gap-1.5 shadow-sm shadow-[#2563eb]/30"
+              title="Aplica este patrón inmediatamente a los nombres de salida de las imágenes actuales"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>Aplicar al Lote {totalImages > 0 ? `(${totalImages})` : ''}</span>
+            </button>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ export interface ProcessedImage {
   id: string;
   originalName: string;
   outputFileName: string;
+  altText?: string;
   originalWidth: number;
   originalHeight: number;
   finalWidth: number;
@@ -22,6 +23,8 @@ export type CropFit = 'inside' | 'cover';
 export type CropPosition = 'center' | 'top' | 'bottom' | 'entropy' | 'attention';
 
 export interface ReprocessOverrides {
+  preserveQuality?: boolean;
+  quality?: number;
   maxKB?: number;
   resizeMode?: 'none' | 'custom';
   customWidth?: string;
@@ -34,6 +37,8 @@ export interface ReprocessOverrides {
 export interface CustomPreset {
   id: string;
   name: string;
+  preserveQuality?: boolean;
+  quality?: number;
   maxKB: number;
   format: string;
   resizeMode: 'none' | 'custom';

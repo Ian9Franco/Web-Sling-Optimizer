@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useCallback } from 'react';
-import { X, Download, ChevronsLeftRight, Columns, SplitSquareVertical } from 'lucide-react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { X, Download, ChevronsLeftRight, Columns, SplitSquareVertical, Sliders, RotateCw } from 'lucide-react';
 import { ProcessedImage } from '../types/image';
 
 interface PreviewModalProps {
@@ -9,6 +9,7 @@ interface PreviewModalProps {
   onClose: () => void;
   onDownloadSingle: (img: ProcessedImage) => void;
   formatBytes: (bytes: number) => string;
+  onReprocessSingle?: (img: ProcessedImage, quality: number) => Promise<ProcessedImage | null>;
 }
 
 export const PreviewModal: React.FC<PreviewModalProps> = ({
@@ -16,10 +17,37 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   onClose,
   onDownloadSingle,
   formatBytes,
+  onReprocessSingle,
 }) => {
   const [sliderPosition, setSliderPosition] = useState<number>(50);
   const [viewMode, setViewMode] = useState<'slider' | 'side-by-side'>('slider');
+  const [currentQuality, setCurrentQuality] = useState<number>(selectedPreview?.qualityApplied || 85);
+  const [isReprocessing, setIsReprocessing] = useState<boolean>(false);
+  const [previewImg, setPreviewImg] = useState<ProcessedImage | null>(selectedPreview);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedPreview) {
+      setPreviewImg(selectedPreview);
+      setCurrentQuality(selectedPreview.qualityApplied || 85);
+    }
+  }, [selectedPreview]);
+
+  const handleApplyQuality = async (newQuality: number) => {
+    if (!previewImg || !onReprocessSingle) return;
+    setCurrentQuality(newQuality);
+    setIsReprocessing(true);
+    try {
+      const updated = await onReprocessSingle(previewImg, newQuality);
+      if (updated) {
+        setPreviewImg(updated);
+      }
+    } catch (err) {
+      console.error('Error aplicando calidad en modal:', err);
+    } finally {
+      setIsReprocessing(false);
+    }
+  };
 
   const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -29,7 +57,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
     setSliderPosition(percentage);
   }, []);
 
-  if (!selectedPreview) return null;
+  if (!previewImg) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
@@ -42,16 +70,22 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pr-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pr-8">
           <div>
             <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2">
               <span>Inspección de Calidad Visual</span>
-              <span className="text-emerald-400 text-xs font-normal">
-                (-{selectedPreview.savedPercentage}%)
-              </span>
+              {previewImg.savedPercentage >= 0 ? (
+                <span className="text-emerald-400 text-xs font-bold">
+                  (-{previewImg.savedPercentage}%)
+                </span>
+              ) : (
+                <span className="text-amber-400 text-xs font-bold">
+                  (+{Math.abs(previewImg.savedPercentage)}%)
+                </span>
+              )}
             </h3>
             <p className="text-xs text-slate-400">
-              {selectedPreview.originalName} &bull; Final: {selectedPreview.finalWidth} × {selectedPreview.finalHeight} px
+              {previewImg.originalName} &bull; Final: {previewImg.finalWidth} × {previewImg.finalHeight} px
             </p>
           </div>
 
@@ -84,6 +118,68 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
           </div>
         </div>
 
+        {/* Barra de Ajuste Fino de Calidad en Vivo */}
+        <div className="bg-[#090b10] border border-[#232730] p-3 rounded-lg mb-4 space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-3.5 h-3.5 text-[#2563eb]" />
+              <span className="text-slate-300 font-bold">Ajustar Calidad:</span>
+              <span className="text-emerald-400 font-bold text-xs bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                {currentQuality}% ({previewImg.formatApplied || 'JPG'})
+              </span>
+              {isReprocessing && (
+                <span className="text-[#2563eb] text-[11px] animate-pulse flex items-center gap-1">
+                  <RotateCw className="w-3 h-3 animate-spin" />
+                  <span>Optimizando...</span>
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 text-[10px]">
+              {[60, 75, 80, 85, 90, 100].map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => handleApplyQuality(q)}
+                  disabled={isReprocessing}
+                  className={`px-2 py-0.5 rounded border transition ${
+                    currentQuality === q
+                      ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold'
+                      : 'bg-[#14161b] border-[#232730] text-slate-400 hover:text-white hover:border-slate-500'
+                  }`}
+                >
+                  {q}%
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-slate-500 font-mono">10%</span>
+            <input
+              type="range"
+              min="10"
+              max="100"
+              step="5"
+              value={currentQuality}
+              disabled={isReprocessing}
+              onChange={(e) => setCurrentQuality(parseInt(e.target.value))}
+              onMouseUp={() => handleApplyQuality(currentQuality)}
+              onTouchEnd={() => handleApplyQuality(currentQuality)}
+              className="flex-1 h-1.5 bg-[#232730] rounded-lg appearance-none cursor-pointer accent-[#2563eb]"
+            />
+            <span className="text-[10px] text-slate-500 font-mono">100%</span>
+            <button
+              type="button"
+              onClick={() => handleApplyQuality(currentQuality)}
+              disabled={isReprocessing}
+              className="px-3 py-1 text-xs font-bold bg-[#2563eb] hover:bg-[#3b82f6] disabled:opacity-50 text-white rounded transition shadow-sm shadow-[#2563eb]/20"
+            >
+              Aplicar
+            </button>
+          </div>
+        </div>
+
         {/* Modo Slider Interactivo */}
         {viewMode === 'slider' ? (
           <div className="space-y-2 mb-6">
@@ -93,11 +189,11 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
                 if (e.buttons === 1) handlePointerMove(e);
               }}
               onClick={handlePointerMove}
-              className="relative w-full aspect-video max-h-[55vh] bg-[#090b10] rounded-lg border border-[#232730] overflow-hidden select-none cursor-ew-resize touch-none flex items-center justify-center"
+              className="relative w-full aspect-video max-h-[50vh] bg-[#090b10] rounded-lg border border-[#232730] overflow-hidden select-none cursor-ew-resize touch-none flex items-center justify-center"
             >
               {/* Capa Inferior: Imagen Optimizada */}
               <img
-                src={selectedPreview.base64Data}
+                src={previewImg.base64Data}
                 alt="Comprimido"
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               />
@@ -108,7 +204,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
                 style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
               >
                 <img
-                  src={selectedPreview.previewUrl}
+                  src={previewImg.previewUrl}
                   alt="Original"
                   className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                 />
@@ -127,10 +223,10 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
 
               {/* Etiquetas Flotantes */}
               <div className="absolute top-3 left-3 bg-[#090b10]/85 border border-[#232730] px-2.5 py-1 rounded text-[11px] text-slate-300 pointer-events-none backdrop-blur">
-                Original: <span className="text-white font-bold">{formatBytes(selectedPreview.originalSizeBytes)}</span>
+                Original: <span className="text-white font-bold">{formatBytes(previewImg.originalSizeBytes)}</span>
               </div>
               <div className="absolute top-3 right-3 bg-[#090b10]/85 border border-emerald-500/30 px-2.5 py-1 rounded text-[11px] text-emerald-400 pointer-events-none backdrop-blur">
-                Optimizado: <span className="text-white font-bold">{formatBytes(selectedPreview.compressedSizeBytes)}</span> ({selectedPreview.qualityApplied}%)
+                Optimizado: <span className="text-white font-bold">{formatBytes(previewImg.compressedSizeBytes)}</span> ({previewImg.qualityApplied}%)
               </div>
             </div>
 
@@ -153,19 +249,19 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="space-y-2">
               <span className="text-xs text-slate-400 block">
-                ORIGINAL: {formatBytes(selectedPreview.originalSizeBytes)} ({selectedPreview.originalWidth}×{selectedPreview.originalHeight}px)
+                ORIGINAL: {formatBytes(previewImg.originalSizeBytes)} ({previewImg.originalWidth}×{previewImg.originalHeight}px)
               </span>
               <div className="aspect-square bg-[#090b10] rounded border border-[#232730] overflow-hidden">
-                <img src={selectedPreview.previewUrl} alt="Original" className="w-full h-full object-contain" />
+                <img src={previewImg.previewUrl} alt="Original" className="w-full h-full object-contain" />
               </div>
             </div>
 
             <div className="space-y-2">
               <span className="text-xs text-emerald-400 block">
-                OPTIMIZADO: {formatBytes(selectedPreview.compressedSizeBytes)} ({selectedPreview.finalWidth}×{selectedPreview.finalHeight}px - {selectedPreview.qualityApplied}%)
+                OPTIMIZADO: {formatBytes(previewImg.compressedSizeBytes)} ({previewImg.finalWidth}×{previewImg.finalHeight}px - {previewImg.qualityApplied}%)
               </span>
               <div className="aspect-square bg-[#090b10] rounded border border-[#e62429]/60 overflow-hidden">
-                <img src={selectedPreview.base64Data} alt="Comprimido" className="w-full h-full object-contain" />
+                <img src={previewImg.base64Data} alt="Comprimido" className="w-full h-full object-contain" />
               </div>
             </div>
           </div>
@@ -181,7 +277,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
           </button>
           <button
             type="button"
-            onClick={() => { onDownloadSingle(selectedPreview); onClose(); }}
+            onClick={() => { onDownloadSingle(previewImg); onClose(); }}
             className="px-4 py-2 bg-[#e62429] text-white font-bold rounded flex items-center gap-1.5 hover:bg-[#ff3b30] shadow-md shadow-[#e62429]/30 transition"
           >
             <Download className="w-3.5 h-3.5" />

@@ -23,6 +23,12 @@
 
 - **🎯 Compresión por Peso Objetivo (Target KB):**
   Algoritmo iterativo inteligente que ajusta la calidad de forma progresiva hasta alcanzar exactamente el peso deseado (ej. < 200 KB) sin sacrificar fidelidad visual innecesariamente.
+- **🤖 Visión Artificial Multimodal para SEO & Accesibilidad:**
+  Integración con **Google Gemini (1.5 Flash / 2.5 Flash)** y **OpenAI (GPT-4o-mini)** para generar nombres descriptivos kebab-case y textos ALT en español e inglés analizando la imagen.
+- **🌊 Fondo Líquido Interactivo (Canvas Spring Physics):**
+  Cuadrícula técnica interactiva que reacciona con física de resorte y gravedad al peso del cursor en tiempo real (60-120 FPS).
+- **📼 Footer Retro '99 con Marquee Infinito:**
+  Cinta cromática de espectro rainbow y marquesina continua inspirada en la era dorada de 1999.
 - **🔄 Conversión Multi-formato de Vanguardia:**
   Soporte para **WebP**, **AVIF**, **JPEG** y **PNG** con fallback inteligente (si un PNG supera el tamaño objetivo, conmuta a JPG automáticamente).
 - **📐 Recorte y Aspect Ratio:**
@@ -33,18 +39,20 @@
   - Limpieza opcional de metadatos EXIF (para privacidad y ahorro de bytes).
   - Superposición de marca de agua (watermark) basada en SVG con escape seguro de caracteres.
 - **🌐 Generador Completo de Favicons & Manifest:**
-  Genera en un solo clic todo el paquete de favicons modernos:
-  - `favicon.ico`
-  - `16x16.png`, `32x32.png`
-  - `apple-touch-icon.png` (180x180)
-  - `android-chrome-192x192.png`, `android-chrome-512x512.png`
-  - `site.webmanifest` listo para producción PWA.
+  Genera en un solo clic todo el paquete de favicons modernos (`favicon.ico`, `16x16`, `32x32`, `apple-touch-icon`, `site.webmanifest`).
 - **📦 Drag & Drop Inteligente:**
   Soporta arrastrar imágenes individuales, carpetas completas y archivos **.ZIP** (extrayéndolos en el cliente con JSZip).
 - **💾 Descargas Flexibles:**
-  Descarga individual con previsualización o exportación masiva empaquetada en `.zip`.
+  Descarga individual con previsualización o exportación masiva empaquetada en `.zip` con `metadata.json` para CMS y catálogos.
 - **💻 Herramientas CLI Standalone:**
   Scripts de consola para procesar colecciones locales de imágenes sin abrir el navegador.
+
+---
+
+## 🏛️ Arquitectura del Proyecto
+
+Para consultar el **árbol completo de archivos (File Tree)** y la documentación detallada por módulo y función, consulta:
+👉 **[ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ---
 

@@ -8,6 +8,9 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get('file') as File | null;
+    const preserveQuality = formData.get('preserveQuality') === 'true';
+    const rawQuality = formData.get('quality') ? parseInt(formData.get('quality') as string, 10) : undefined;
+    const hasExplicitQuality = rawQuality !== undefined && !isNaN(rawQuality);
     const maxKB = parseFloat((formData.get('maxKB') as string) || '200');
     const resizeMode = (formData.get('resizeMode') as string) || 'none'; // 'none' | 'custom'
     const maxWidth = parseInt((formData.get('maxWidth') as string) || '0', 10);
@@ -78,7 +81,7 @@ export async function POST(req: NextRequest) {
     else if (preferredFormat === 'avif') targetExt = '.avif';
 
     const maxSizeBytes = maxKB * 1024;
-    let quality = 90;
+    let quality = hasExplicitQuality ? Math.max(1, Math.min(100, rawQuality!)) : 90;
     let actualFormat = targetExt.replace('.', '');
     if (actualFormat === 'jpeg') actualFormat = 'jpg';
 
@@ -156,35 +159,98 @@ export async function POST(req: NextRequest) {
 
     let finalBuffer: Buffer = transformedBuffer;
 
-    // ETAPA 2: Proceso iterativo de codificación (re-encode sólo sobre la imagen ya transformada)
-    while (quality >= 15) {
-      const encodePipeline = sharp(transformedBuffer);
+    const hasVisualTransforms = (
+      rotateAngle > 0 ||
+      flipHorizontal ||
+      applyGrayscale ||
+      watermarkText !== '' ||
+      (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0)) ||
+      (preferredFormat !== 'original' && preferredFormat !== ext.replace('.', ''))
+    );
 
+    // Si el usuario convierte a PNG desde otro formato, el peso suele aumentar naturalmente;
+    // de lo contrario, el objetivo SIEMPRE debe ser reducir el peso respecto al original (o maxKB si es más restrictivo)
+    const isConvertingToPng = targetExt === '.png' && ext !== '.png';
+    const effectiveTargetBytes = isConvertingToPng 
+      ? maxSizeBytes 
+      : Math.min(maxSizeBytes, Math.floor(originalSize * 0.95));
+
+    // ETAPA 2: Proceso de codificación
+    if (hasExplicitQuality) {
+      // MODO CALIDAD CONFIGURABLE: Codificar con el porcentaje exacto elegido por el usuario (ej. 80%, 75%)
+      const encodePipeline = sharp(transformedBuffer);
       if (targetExt === '.png') {
-        finalBuffer = await encodePipeline.png({ quality, compressionLevel: 9, palette: true }).toBuffer();
-        if (finalBuffer.length > maxSizeBytes && preferredFormat === 'original') {
-          targetExt = '.jpg';
-          actualFormat = 'jpg';
-          continue;
-        }
+        finalBuffer = await encodePipeline.png({ quality, compressionLevel: 9, palette: quality < 100 }).toBuffer();
       } else if (targetExt === '.webp') {
         finalBuffer = await encodePipeline.webp({ quality }).toBuffer();
       } else if (targetExt === '.avif') {
         finalBuffer = await encodePipeline.avif({ quality }).toBuffer();
       } else {
-        finalBuffer = await encodePipeline.jpeg({ quality, mozjpeg: true, chromaSubsampling: '4:4:4' }).toBuffer();
+        finalBuffer = await encodePipeline.jpeg({ quality, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
+      }
+    } else if (preserveQuality) {
+      // MODO PRESERVAR CALIDAD (por defecto): No degradar la imagen destructivamente.
+      // Si no hay transformaciones visuales ni cambio de formato, conservar el original.
+      if (!hasVisualTransforms && (preferredFormat === 'original' || preferredFormat === ext.replace('.', ''))) {
+        if (!stripExif) {
+          finalBuffer = inputBuffer;
+        } else {
+          // Solo quitar EXIF sin degradar compresión
+          finalBuffer = await sharp(inputBuffer).toBuffer();
+        }
+        quality = 100;
+      } else {
+        // Se aplicó redimensionado, rotación o conversión de formato: codificar en máxima calidad sin bajar por KB
+        quality = 95;
+        const encodePipeline = sharp(transformedBuffer);
+        if (targetExt === '.png') {
+          finalBuffer = await encodePipeline.png({ compressionLevel: 9 }).toBuffer();
+        } else if (targetExt === '.webp') {
+          finalBuffer = await encodePipeline.webp({ quality: 95, effort: 6 }).toBuffer();
+        } else if (targetExt === '.avif') {
+          finalBuffer = await encodePipeline.avif({ quality: 90, effort: 6 }).toBuffer();
+        } else {
+          finalBuffer = await encodePipeline.jpeg({ quality: 95, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
+        }
+      }
+    } else {
+      // MODO REDUCCIÓN POR OBJETIVO DE KB (Opcional): Bucle iterativo de compresión
+      while (quality >= 15) {
+        const encodePipeline = sharp(transformedBuffer);
+
+        if (targetExt === '.png') {
+          finalBuffer = await encodePipeline.png({ quality, compressionLevel: 9, palette: true }).toBuffer();
+          if (finalBuffer.length > maxSizeBytes && preferredFormat === 'original') {
+            targetExt = '.jpg';
+            actualFormat = 'jpg';
+            continue;
+          }
+        } else if (targetExt === '.webp') {
+          finalBuffer = await encodePipeline.webp({ quality }).toBuffer();
+        } else if (targetExt === '.avif') {
+          finalBuffer = await encodePipeline.avif({ quality }).toBuffer();
+        } else {
+          finalBuffer = await encodePipeline.jpeg({ quality, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
+        }
+
+        if (finalBuffer.length <= effectiveTargetBytes) {
+          break;
+        }
+
+        quality -= 5;
       }
 
-      if (finalBuffer.length <= maxSizeBytes) {
-        break;
+      // Salvaguarda: si tras comprimir resulta más pesada que la original sin transformaciones, conservar original
+      if (!hasVisualTransforms && finalBuffer.length >= originalSize && (preferredFormat === 'original' || preferredFormat === ext.replace('.', ''))) {
+        finalBuffer = inputBuffer;
+        actualFormat = ext.replace('.', '') === 'jpeg' ? 'jpg' : ext.replace('.', '');
+        quality = 100;
       }
-
-      quality -= 5;
     }
 
     const compressedSize = finalBuffer.length;
     const savedBytes = originalSize - compressedSize;
-    const savedPercentage = savedBytes > 0 ? ((savedBytes / originalSize) * 100).toFixed(1) : '0';
+    const savedPercentage = parseFloat(((savedBytes / originalSize) * 100).toFixed(1));
 
     const finalMetadata = await sharp(finalBuffer).metadata();
     const finalWidth = finalMetadata.width || originalWidth;
@@ -230,7 +296,7 @@ export async function POST(req: NextRequest) {
       compressedSizeBytes: compressedSize,
       qualityApplied: quality,
       formatApplied: actualFormat.toUpperCase(),
-      savedPercentage: parseFloat(savedPercentage),
+      savedPercentage,
       base64Data,
       mimeType,
     });

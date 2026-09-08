@@ -22,6 +22,8 @@ export const SrcsetModal: React.FC<SrcsetModalProps> = ({ image, onClose }) => {
   const width = image.finalWidth || 1200;
   const height = image.finalHeight || 800;
 
+  const altText = image.altText || baseName;
+
   const htmlCode = `<picture>
   <!-- Soporte de última generación (AVIF) -->
   <source 
@@ -38,7 +40,7 @@ export const SrcsetModal: React.FC<SrcsetModalProps> = ({ image, onClose }) => {
   <!-- Imagen fallback con atributos SEO y Lazy-loading -->
   <img 
     src="${baseName}.${ext}" 
-    alt="${baseName}" 
+    alt="${altText}" 
     width="${width}" 
     height="${height}" 
     loading="lazy" 
@@ -62,7 +64,7 @@ export const SrcsetModal: React.FC<SrcsetModalProps> = ({ image, onClose }) => {
   {/* Imagen fallback con atributos SEO y Lazy-loading */}
   <img 
     src="/${baseName}.${ext}" 
-    alt="${baseName}" 
+    alt="${altText}" 
     width={${width}} 
     height={${height}} 
     loading="lazy" 

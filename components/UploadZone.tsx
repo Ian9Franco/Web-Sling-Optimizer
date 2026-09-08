@@ -28,8 +28,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
       onClick={() => fileInputRef.current?.click()}
       className={`panel-border p-8 text-center cursor-pointer transition-all duration-200 border-dashed ${
         isDragging 
-          ? 'border-[#e62429] bg-[#e62429]/10 scale-[1.005]' 
-          : 'border-[#232730] hover:border-[#2563eb]/60 bg-[#14161b]'
+          ? 'border-[#e62429] bg-[#1a1215] scale-[1.005]' 
+          : 'border-[#1e2638] hover:border-[#2563eb]/60 bg-[#111522]'
       }`}
     >
       <input
@@ -49,7 +49,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         SOLTAR IMÁGENES ACÁ O PEGAR (CTRL + V)
       </h3>
       <p className="text-slate-500 text-xs font-mono">
-        Soporta JPG, PNG, WebP, AVIF, TIFF, BMP &bull; Máx. 4.5 MB por archivo (Optimizado para Vercel)
+        Soporta JPG, PNG, WebP, AVIF, TIFF, BMP &bull; Sin límite de peso (Pre-optimización automática para Vercel)
       </p>
     </div>
   );

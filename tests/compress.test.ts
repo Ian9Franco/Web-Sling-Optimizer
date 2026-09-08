@@ -104,6 +104,30 @@ describe('API /api/compress', () => {
     expect(json.success).toBe(true);
     expect(json.outputFileName).toMatch(/^websling_logo-\d+x\d+-q\d+\.webp$/);
   });
+
+  it('debe codificar exactamente a la calidad solicitada cuando se provee el parámetro quality', async () => {
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
+    const imageBuffer = fs.readFileSync(imagePath);
+    const blob = new Blob([imageBuffer], { type: 'image/png' });
+
+    const formData = new FormData();
+    formData.append('file', blob, 'websling_logo.png');
+    formData.append('quality', '75');
+    formData.append('format', 'jpg');
+
+    const req = new NextRequest('http://localhost:3000/api/compress', {
+      method: 'POST',
+      body: formData,
+    });
+
+    const res = await compressHandler(req);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(json.qualityApplied).toBe(75);
+    expect(json.formatApplied).toBe('JPG');
+  });
 });
 
 describe('API /api/favicon', () => {
