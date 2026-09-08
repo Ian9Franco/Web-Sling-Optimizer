@@ -111,10 +111,14 @@ export default function HomePage() {
     faviconFile,
     faviconCustomName,
     setFaviconCustomName,
+    faviconMetadata,
+    updateMetadataField,
     faviconResults,
     setFaviconResults,
     isGeneratingFavicons,
+    isGeneratingAIMeta,
     handleFaviconProcess,
+    handleGenerateAIMeta,
     downloadFaviconZip,
   } = useFaviconGenerator();
 
@@ -301,11 +305,17 @@ export default function HomePage() {
         faviconCustomName={faviconCustomName}
         setFaviconCustomName={setFaviconCustomName}
         faviconFile={faviconFile}
+        faviconMetadata={faviconMetadata}
+        updateMetadataField={updateMetadataField}
         faviconResults={faviconResults}
         setFaviconResults={setFaviconResults}
         isGeneratingFavicons={isGeneratingFavicons}
+        isGeneratingAIMeta={isGeneratingAIMeta}
         handleFaviconProcess={handleFaviconProcess}
+        handleGenerateAIMeta={handleGenerateAIMeta}
         downloadFaviconZip={downloadFaviconZip}
+        aiSettings={aiSettings}
+        onOpenAISettings={() => setIsAIModalOpen(true)}
       />
 
       {/* Modal Comparativa */}

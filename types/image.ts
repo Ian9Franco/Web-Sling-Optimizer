@@ -62,12 +62,22 @@ export interface FaviconIconItem {
   base64: string;
 }
 
+export interface FaviconMetadata {
+  appName: string;
+  shortName: string;
+  description: string;
+  themeColor: string;
+  backgroundColor: string;
+  keywords?: string;
+}
+
 export interface FaviconResponse {
   success: boolean;
   originalName: string;
   icons: FaviconIconItem[];
   manifest: string;
   headSnippet?: string;
+  metadata?: FaviconMetadata;
 }
 
 export interface FileSystemFileEntryItem {
