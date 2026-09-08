@@ -155,6 +155,36 @@ describe('API /api/compress', () => {
     expect(json.finalWidth).toBe(json.originalWidth * 2);
     expect(json.finalHeight).toBe(json.originalHeight * 2);
   });
+
+  it('debe exportar a formatos especiales / raros (TIFF y GIF) correctamente', async () => {
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
+    const imageBuffer = fs.readFileSync(imagePath);
+    const blob = new Blob([imageBuffer], { type: 'image/png' });
+
+    // Test TIFF
+    const formTiff = new FormData();
+    formTiff.append('file', blob, 'websling_logo.png');
+    formTiff.append('format', 'tiff');
+    const reqTiff = new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: formTiff });
+    const resTiff = await compressHandler(reqTiff);
+    expect(resTiff.status).toBe(200);
+    const jsonTiff = await resTiff.json();
+    expect(jsonTiff.success).toBe(true);
+    expect(jsonTiff.formatApplied).toBe('TIFF');
+    expect(jsonTiff.outputFileName).toContain('.tiff');
+
+    // Test GIF
+    const formGif = new FormData();
+    formGif.append('file', blob, 'websling_logo.png');
+    formGif.append('format', 'gif');
+    const reqGif = new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: formGif });
+    const resGif = await compressHandler(reqGif);
+    expect(resGif.status).toBe(200);
+    const jsonGif = await resGif.json();
+    expect(jsonGif.success).toBe(true);
+    expect(jsonGif.formatApplied).toBe('GIF');
+    expect(jsonGif.outputFileName).toContain('.gif');
+  });
 });
 
 describe('API /api/favicon', () => {

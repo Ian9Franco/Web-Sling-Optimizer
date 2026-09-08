@@ -675,16 +675,31 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
         {/* Formato de Salida */}
         <div className="space-y-2 pt-3 border-t border-[#232730]">
-          <label className="text-xs font-mono text-slate-400 block">Formato de Salida</label>
+          <div className="flex justify-between items-center">
+            <label className="text-xs font-mono text-slate-400 block">Formato de Salida</label>
+            <span className="text-[10px] font-mono text-slate-500">Web &amp; Especiales</span>
+          </div>
           <select
             value={format}
-            onChange={(e) => setFormat(e.target.value)}
-            className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded-lg p-2.5 text-slate-200 outline-none"
+            onChange={(e) => {
+              const val = e.target.value;
+              setFormat(val);
+              reprocessBatch({ format: val });
+            }}
+            className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded-lg p-2.5 text-slate-200 outline-none cursor-pointer"
           >
-            <option value="original">Original (Auto JPG si excede KB)</option>
-            <option value="webp">WebP (Optimizado Web)</option>
-            <option value="jpg">JPG (Máxima Compatibilidad)</option>
-            <option value="png">PNG (Indexado de Calidad)</option>
+            <optgroup label="Estándares Web">
+              <option value="original">Original (Mantener o Auto JPG)</option>
+              <option value="webp">WebP (Optimizado Web)</option>
+              <option value="jpg">JPG (Máxima Compatibilidad)</option>
+              <option value="png">PNG (Sin Pérdida / Alpha)</option>
+              <option value="avif">AVIF (Ultra Compresión Moderna)</option>
+            </optgroup>
+            <optgroup label="Formatos Especiales &amp; Raros">
+              <option value="tiff">TIFF / TIF (Edición &amp; Impresión Pro)</option>
+              <option value="gif">GIF (Frame Estático Web)</option>
+              <option value="heic">HEIC / HEIF (Apple Pro Format)</option>
+            </optgroup>
           </select>
         </div>
 

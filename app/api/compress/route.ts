@@ -88,10 +88,13 @@ export async function POST(req: NextRequest) {
     else if (preferredFormat === 'webp') targetExt = '.webp';
     else if (preferredFormat === 'png') targetExt = '.png';
     else if (preferredFormat === 'avif') targetExt = '.avif';
+    else if (preferredFormat === 'tiff' || preferredFormat === 'tif') targetExt = '.tiff';
+    else if (preferredFormat === 'gif') targetExt = '.gif';
+    else if (preferredFormat === 'heic' || preferredFormat === 'heif') targetExt = '.heic';
     else if (preferredFormat === 'original' && isRawCameraFile) targetExt = '.jpg';
 
-    // Salvaguarda: si targetExt no es un formato web común, exportar a jpg
-    if (!['.jpg', '.jpeg', '.webp', '.png', '.avif'].includes(targetExt)) {
+    // Salvaguarda: si targetExt no es un formato de salida soportado, exportar a jpg
+    if (!['.jpg', '.jpeg', '.webp', '.png', '.avif', '.tiff', '.tif', '.gif', '.heic', '.heif'].includes(targetExt)) {
       targetExt = '.jpg';
     }
 
@@ -204,10 +207,10 @@ export async function POST(req: NextRequest) {
       (preferredFormat !== 'original' && preferredFormat !== ext.replace('.', ''))
     );
 
-    // Si el usuario convierte a PNG desde otro formato, el peso suele aumentar naturalmente;
+    // Si el usuario convierte a PNG o TIFF desde otro formato, el peso suele aumentar naturalmente;
     // de lo contrario, el objetivo SIEMPRE debe ser reducir el peso respecto al original (o maxKB si es más restrictivo)
-    const isConvertingToPng = targetExt === '.png' && ext !== '.png';
-    const effectiveTargetBytes = isConvertingToPng 
+    const isConvertingToUncompressed = (targetExt === '.png' && ext !== '.png') || (targetExt === '.tiff' && ext !== '.tiff');
+    const effectiveTargetBytes = isConvertingToUncompressed 
       ? maxSizeBytes 
       : Math.min(maxSizeBytes, Math.floor(originalSize * 0.95));
 
@@ -221,6 +224,12 @@ export async function POST(req: NextRequest) {
         finalBuffer = await encodePipeline.webp({ quality }).toBuffer();
       } else if (targetExt === '.avif') {
         finalBuffer = await encodePipeline.avif({ quality }).toBuffer();
+      } else if (targetExt === '.tiff' || targetExt === '.tif') {
+        finalBuffer = await encodePipeline.tiff({ quality, compression: 'deflate' }).toBuffer();
+      } else if (targetExt === '.gif') {
+        finalBuffer = await encodePipeline.gif().toBuffer();
+      } else if (targetExt === '.heic' || targetExt === '.heif') {
+        finalBuffer = await encodePipeline.heif({ quality, compression: 'hevc' }).toBuffer();
       } else {
         finalBuffer = await encodePipeline.jpeg({ quality, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
       }
@@ -245,6 +254,12 @@ export async function POST(req: NextRequest) {
           finalBuffer = await encodePipeline.webp({ quality: 95, effort: 6 }).toBuffer();
         } else if (targetExt === '.avif') {
           finalBuffer = await encodePipeline.avif({ quality: 90, effort: 6 }).toBuffer();
+        } else if (targetExt === '.tiff' || targetExt === '.tif') {
+          finalBuffer = await encodePipeline.tiff({ quality: 95, compression: 'deflate' }).toBuffer();
+        } else if (targetExt === '.gif') {
+          finalBuffer = await encodePipeline.gif().toBuffer();
+        } else if (targetExt === '.heic' || targetExt === '.heif') {
+          finalBuffer = await encodePipeline.heif({ quality: 90, compression: 'hevc' }).toBuffer();
         } else {
           finalBuffer = await encodePipeline.jpeg({ quality: 95, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
         }
@@ -265,6 +280,12 @@ export async function POST(req: NextRequest) {
           finalBuffer = await encodePipeline.webp({ quality }).toBuffer();
         } else if (targetExt === '.avif') {
           finalBuffer = await encodePipeline.avif({ quality }).toBuffer();
+        } else if (targetExt === '.tiff' || targetExt === '.tif') {
+          finalBuffer = await encodePipeline.tiff({ quality, compression: 'deflate' }).toBuffer();
+        } else if (targetExt === '.gif') {
+          finalBuffer = await encodePipeline.gif().toBuffer();
+        } else if (targetExt === '.heic' || targetExt === '.heif') {
+          finalBuffer = await encodePipeline.heif({ quality, compression: 'hevc' }).toBuffer();
         } else {
           finalBuffer = await encodePipeline.jpeg({ quality, mozjpeg: true, chromaSubsampling: '4:2:0' }).toBuffer();
         }
@@ -299,6 +320,13 @@ export async function POST(req: NextRequest) {
       png: 'image/png',
       webp: 'image/webp',
       avif: 'image/avif',
+      tiff: 'image/tiff',
+      tif: 'image/tiff',
+      gif: 'image/gif',
+      heic: 'image/heif',
+      heif: 'image/heif',
+      bmp: 'image/bmp',
+      svg: 'image/svg+xml',
     };
 
     const mimeType = mimeTypes[actualFormat] || 'image/jpeg';
