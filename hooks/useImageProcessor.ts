@@ -132,7 +132,6 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         rotate !== 0 ||
         flip ||
         grayscale ||
-        stripExif ||
         Boolean(watermarkText && watermarkText.trim().length > 0);
 
       if (!isCustomTransform) {
@@ -252,7 +251,6 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         rotate !== 0 ||
         flip ||
         grayscale ||
-        stripExif ||
         Boolean(watermarkText && watermarkText.trim().length > 0);
 
       if (!isCustomTransform) {
@@ -562,7 +560,6 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
 
     if (!activeKey || activeKey.trim().length < 5) {
       if (onNeedConfig) onNeedConfig();
-      alert(`Por favor configura tu API Key de ${aiSettings.provider === 'gemini' ? 'Google Gemini' : 'OpenAI'} en el panel de IA.`);
       return;
     }
 
@@ -640,7 +637,6 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       setTimeout(() => {
         setAiInteraction(prev => prev ? { ...prev, isActive: false } : null);
       }, 4000);
-      alert(msg);
     } finally {
       setAnalyzingId(null);
     }
@@ -652,7 +648,6 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
 
     if (!activeKey || activeKey.trim().length < 5) {
       if (onNeedConfig) onNeedConfig();
-      alert(`Por favor configura tu API Key de ${aiSettings.provider === 'gemini' ? 'Google Gemini' : 'OpenAI'} en el panel de IA.`);
       return;
     }
 

@@ -239,13 +239,14 @@ export async function POST(req: NextRequest) {
 
         quality -= 5;
       }
+    }
 
-      // Salvaguarda: si tras comprimir resulta más pesada que la original sin transformaciones, conservar original
-      if (!hasVisualTransforms && finalBuffer.length >= originalSize && (preferredFormat === 'original' || preferredFormat === ext.replace('.', ''))) {
-        finalBuffer = inputBuffer;
-        actualFormat = ext.replace('.', '') === 'jpeg' ? 'jpg' : ext.replace('.', '');
-        quality = 100;
-      }
+    // Salvaguarda Global: Si tras cualquier proceso la imagen resultante es más pesada que la original
+    // y no se aplicaron transformaciones visuales ni cambio forzado de formato, conservar el archivo 100% original.
+    if (!hasVisualTransforms && finalBuffer.length >= originalSize && (preferredFormat === 'original' || preferredFormat === ext.replace('.', ''))) {
+      finalBuffer = inputBuffer;
+      actualFormat = ext.replace('.', '') === 'jpeg' ? 'jpg' : ext.replace('.', '');
+      quality = 100;
     }
 
     const compressedSize = finalBuffer.length;
