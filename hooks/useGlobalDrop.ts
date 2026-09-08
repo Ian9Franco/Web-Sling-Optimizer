@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import JSZip from 'jszip';
 import { FileSystemEntryItem } from '../types/image';
+import { isSupportedImageFile, SUPPORTED_EXTENSIONS_REGEX } from '../utils/supportedFormats';
 
 interface UseGlobalDropOptions {
   onFiles: (files: File[]) => void | Promise<void>;
@@ -68,7 +69,7 @@ export function useGlobalDrop({ onFiles }: UseGlobalDropOptions) {
           const zipFilePromises: Promise<File | null>[] = [];
 
           zip.forEach((relativePath, zipEntry) => {
-            if (!zipEntry.dir && /\.(jpg|jpeg|png|webp|avif|tiff|bmp)$/i.test(zipEntry.name)) {
+            if (!zipEntry.dir && SUPPORTED_EXTENSIONS_REGEX.test(zipEntry.name)) {
               zipFilePromises.push(
                 zipEntry.async('blob').then(blob => {
                   const fileName = relativePath.split('/').pop() || zipEntry.name;
@@ -83,7 +84,7 @@ export function useGlobalDrop({ onFiles }: UseGlobalDropOptions) {
         } catch (err) {
           console.error('Error al descomprimir archivo ZIP:', err);
         }
-      } else if (file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|avif|tiff|bmp)$/i.test(file.name)) {
+      } else if (isSupportedImageFile(file)) {
         finalImageFiles.push(file);
       }
     }

@@ -12,6 +12,7 @@ import { AISettings, AIInteractionState } from '../types/ai';
 import { asyncPool } from '../utils/concurrency';
 import { resolveFileNamePattern, generateAltText, slugify } from '../utils/naming';
 import { clientPreCompress } from '../utils/clientPreCompress';
+import { isSupportedImageFile, RAW_CAMERA_REGEX } from '../utils/supportedFormats';
 
 interface UseImageProcessorOptions {
   qualityMode: 'preserve' | 'manual' | 'maxKB';
@@ -90,9 +91,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
   const [aiInteraction, setAiInteraction] = useState<AIInteractionState | null>(null);
 
   const handleFiles = async (filesList: FileList | File[]) => {
-    const validFiles = Array.from(filesList).filter(file => 
-      file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|avif|tiff|tif|bmp|dng|raw|cr2|nef)$/i.test(file.name)
-    );
+    const validFiles = Array.from(filesList).filter(file => isSupportedImageFile(file));
 
     if (validFiles.length === 0) return;
 
@@ -128,7 +127,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       // Extraer siempre dimensiones reales de la imagen original en el cliente
       const { width: origWidth, height: origHeight } = await getImageDimensions(previewUrl);
 
-      const isRawCamera = /\.(dng|raw|cr2|nef|tif|tiff)$/i.test(file.name);
+      const isRawCamera = RAW_CAMERA_REGEX.test(file.name);
 
       // Si el usuario eligió Sin Pérdida y ningún filtro/recorte/conversión/upscaling/RAW, conservar el archivo 100% original sin tocar
       const isCustomTransform = 
@@ -259,7 +258,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     await asyncPool(3, list, async (img, idx) => {
       setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'processing' } : i));
 
-      const isRawCamera = /\.(dng|raw|cr2|nef|tif|tiff)$/i.test(img.originalName);
+      const isRawCamera = RAW_CAMERA_REGEX.test(img.originalName);
 
       const isCustomTransform = 
         targetModeQ !== 'preserve' ||

@@ -2,6 +2,7 @@
 
 import React, { useRef } from 'react';
 import { Upload } from 'lucide-react';
+import { ACCEPT_FILE_INPUT_STRING } from '../utils/supportedFormats';
 
 interface UploadZoneProps {
   onFilesSelected: (files: FileList | File[]) => void;
@@ -36,7 +37,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         ref={fileInputRef}
         type="file"
         multiple
-        accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.tiff,.tif,.bmp,.dng,.raw,.cr2,.nef"
+        accept={ACCEPT_FILE_INPUT_STRING}
         className="hidden"
         onChange={(e) => e.target.files && onFilesSelected(e.target.files)}
       />
@@ -49,7 +50,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
         SOLTAR IMÁGENES ACÁ O PEGAR (CTRL + V)
       </h3>
       <p className="text-slate-500 text-xs font-mono">
-        Soporta JPG, PNG, WebP, AVIF, RAW / DNG, TIFF &bull; Sin límite de peso (Pre-optimización inteligente)
+        Soporta JPG, PNG, WebP, AVIF, RAW (DNG, CR2, NEF, ARW...), HEIC, TIFF, SVG, GIF &amp; formatos raros &bull; Sin límite de peso
       </p>
     </div>
   );

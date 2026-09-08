@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
+import { RAW_CAMERA_REGEX } from '../../../utils/supportedFormats';
 
 // Límite de carga serverless para evitar fallos de infraestructura (4.5 MB)
 const MAX_FILE_SIZE_BYTES = 4.5 * 1024 * 1024;
@@ -78,9 +79,9 @@ export async function POST(req: NextRequest) {
 
     let baseName = customName ? customName.replace(/\.[^/.]+$/, "") : defaultBaseName;
 
-    // Si es un archivo RAW de cámara (DNG, RAW, CR2, NEF), el navegador no puede renderizarlo directamente en original;
+    // Si es un archivo RAW o formato no soportado de forma nativa por browsers,
     // por defecto lo exportamos a JPG limpio si no se seleccionó otro formato.
-    const isRawCameraFile = ['.dng', '.raw', '.cr2', '.nef', '.tif', '.tiff'].includes(ext);
+    const isRawCameraFile = RAW_CAMERA_REGEX.test(file.name);
 
     let targetExt = ext;
     if (preferredFormat === 'jpg' || preferredFormat === 'jpeg') targetExt = '.jpg';
@@ -88,6 +89,11 @@ export async function POST(req: NextRequest) {
     else if (preferredFormat === 'png') targetExt = '.png';
     else if (preferredFormat === 'avif') targetExt = '.avif';
     else if (preferredFormat === 'original' && isRawCameraFile) targetExt = '.jpg';
+
+    // Salvaguarda: si targetExt no es un formato web común, exportar a jpg
+    if (!['.jpg', '.jpeg', '.webp', '.png', '.avif'].includes(targetExt)) {
+      targetExt = '.jpg';
+    }
 
     const maxSizeBytes = maxKB * 1024;
     let quality = hasExplicitQuality ? Math.max(1, Math.min(100, rawQuality!)) : 90;
