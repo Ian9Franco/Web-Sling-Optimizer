@@ -22,14 +22,16 @@
 ## ⚡ Características Principales
 
 - **🎯 Compresión por Peso Objetivo (Target KB):**
-  Algoritmo iterativo inteligente que ajusta la calidad de forma progresiva hasta alcanzar exactamente el peso deseado (ej. < 200 KB) sin sacrificar fidelidad visual innecesariamente.
+  Algoritmo iterativo que reduce la calidad de forma progresiva hasta cumplir el peso máximo solicitado cuando el formato y el contenido lo permiten, evitando degradación innecesaria.
+- **🔎 Upscaling Lanczos3 (2x / 4x):**
+  Redimensionamiento de alta calidad mediante interpolación Lanczos3. Esta función mejora la resolución de salida, pero no reconstruye detalle mediante un modelo de super-resolución por IA.
 - **🤖 Visión Artificial Multimodal para SEO & Accesibilidad:**
   Integración con **Google Gemini (1.5 Flash / 2.5 Flash)** y **OpenAI (GPT-4o-mini)** para generar nombres descriptivos kebab-case y textos ALT en español e inglés analizando la imagen.
 - **🌊 Fondo Líquido Interactivo (Canvas Spring Physics):**
   Cuadrícula técnica interactiva que reacciona con física de resorte y gravedad al peso del cursor en tiempo real (60-120 FPS).
 - **📼 Footer Retro '99 con Marquee Infinito:**
   Cinta cromática de espectro rainbow y marquesina continua inspirada en la era dorada de 1999.
-- **🔄 Conversión Multi-formato de Vanguardia:**
+- **🔄 Conversión Multi-formato:**
   Soporte para **WebP**, **AVIF**, **JPEG** y **PNG** con fallback inteligente (si un PNG supera el tamaño objetivo, conmuta a JPG automáticamente).
 - **📐 Recorte y Aspect Ratio:**
   Ajustes con `fit` (`cover`, `contain`, `inside`) y posicionamiento inteligente (`center`, `top`, `bottom`, `entropy`, `attention`).
@@ -120,7 +122,12 @@ npm run cli:batch
 ## ⚙️ Arquitectura y Límites Técnicos
 
 - **Procesamiento Server-Side:** Las transformaciones pesadas se ejecutan del lado del servidor mediante rutas de API (`/api/compress` y `/api/favicon`), delegando el cálculo al motor de bajo nivel `sharp`.
-- **Límite de Vercel Serverless (4.5 MB):** En despliegues Serverless (como Vercel), las funciones tienen un límite estricto de carga útil en el cuerpo de la petición de **4.5 MB**. La aplicación valida tanto en cliente como en servidor este umbral para evitar fallos inesperados de infraestructura.
+- **Archivos grandes:** Para evitar exceder los límites de payload del entorno serverless, el cliente puede preprocesar imágenes antes de enviarlas al backend. Esto amplía el rango práctico de archivos procesables, pero no equivale a un tamaño de entrada ilimitado.
+- **Vercel Serverless:** La aplicación aplica validaciones preventivas sobre el tamaño de las solicitudes para evitar fallos de infraestructura y mantener el pipeline dentro de los límites del despliegue.
+
+### Privacidad de claves de IA
+
+Las claves BYOK de Gemini/OpenAI se envían al endpoint de análisis para realizar la solicitud al proveedor seleccionado. La aplicación no necesita persistir esas claves en el servidor para completar el análisis. Si se despliega una instancia pública, conviene revisar esta ruta y la política de privacidad antes de usar credenciales sensibles.
 
 ---
 
