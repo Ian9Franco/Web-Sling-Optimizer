@@ -63,7 +63,7 @@ websling/
 │   ├── ai.ts                               # Tipos de proveedores IA, ajustes y respuestas
 │   └── image.ts                            # Tipos de imágenes procesadas, recorte y presets
 ├── utils/                                  # Utilidades puras reutilizables
-│   ├── clientPreCompress.ts                # 🛡️ Pre-compresión Canvas client-side para Vercel 4.5MB
+│   ├── clientPreCompress.ts                # 🛡️ Pre-compresión Canvas client-side para requests grandes
 │   ├── concurrency.ts                      # 🚦 Control de concurrencia en promesas (asyncPool)
 │   └── naming.ts                           # 🏷️ Generador de slugs, textos ALT y patrones
 ├── ROADMAP_AI_UPSCALING_AND_ENHANCEMENT.md # 🚀 Hoja de ruta para Super-Resolución y remoción de fondo
@@ -83,21 +83,23 @@ websling/
 - **Función:** `POST(req: NextRequest)`
 - **Descripción:** Recibe un `FormData` con la imagen y parámetros (calidad, dimensiones, rotación, recorte, marca de agua, formato).
 - **Lógica Interna:**
-  1. Valida el tamaño límite de 4.5 MB para entornos serverless.
+  1. Valida el tamaño de la solicitud para mantenerse dentro de los límites del entorno serverless.
   2. Extrae metadatos con `sharp`.
   3. Ejecuta transformaciones iniciales (rotación, escala de grises, recorte con `fit` y posición).
   4. Inyecta marca de agua SVG si fue solicitada.
   5. Ejecuta compresión:
      - **Modo Manual:** Aplica la calidad solicitada (1-100%).
-     - **Modo MaxKB:** Algoritmo binario iterativo que busca la mejor calidad que cumpla con el peso máximo sin degradar innecesariamente.
-     - **Modo Sin Pérdida:** Conserva la máxima fidelidad posible.
+     - **Modo MaxKB:** Reduce la calidad de forma iterativa en pasos hasta cumplir el peso máximo o alcanzar el umbral mínimo configurado.
+     - **Modo Sin Pérdida / máxima fidelidad:** Evita una reducción intencional de calidad; algunas transformaciones o conversiones pueden requerir recodificación.
   6. Devuelve payload JSON con `base64Data`, dimensiones finales, porcentaje de ahorro y peso resultante.
+
+> **Nota:** El modo MaxKB actual utiliza una búsqueda lineal descendente de calidad. Una búsqueda binaria real queda como mejora de rendimiento futura.
 
 #### 📍 `app/api/ai/describe/route.ts`
 - **Función:** `POST(req: NextRequest)`
 - **Descripción:** Analizador de visión artificial para SEO y Accesibilidad.
 - **Lógica Interna:**
-  1. Recibe la imagen o base64 y credenciales privadas del usuario.
+  1. Recibe la imagen o base64 y credenciales privadas del usuario para completar la solicitud al proveedor seleccionado.
   2. Genera una miniatura ligera de 512px (JPEG 80%) para minimizar el consumo de tokens y acelerar la respuesta.
   3. Conecta con **Google Gemini** (con fallback automático de modelos y versiones `v1beta`/`v1`) o **OpenAI GPT-4o-mini**.
   4. Retorna `fileName` (kebab-case limpio) y `altText` contextual.
@@ -135,7 +137,7 @@ websling/
 
 #### 📍 `utils/clientPreCompress.ts`
 - **Función:** `clientPreCompress(file: File | Blob): Promise<File>`
-- **Descripción:** Si una imagen supera 4.1 MB y requiere transformación, la pre-comprime en un `<canvas>` antes de enviarla por HTTP, garantizando que nunca falle en Vercel Serverless (límite 4.5 MB). Si el usuario seleccionó "Sin Pérdida", no se modifica.
+- **Descripción:** Cuando una imagen supera el umbral configurado y requiere transformación, puede precomprimirse en un `<canvas>` antes de enviarse por HTTP para reducir el riesgo de exceder los límites de payload del entorno serverless. Si el usuario seleccionó un flujo que preserve el archivo original, no se modifica de forma preventiva.
 
 #### 📍 `utils/naming.ts`
 - **Funciones:**
