@@ -276,6 +276,25 @@ export const LiquidGridBackground: React.FC = () => {
         }
       }
 
+      // Resplandor ambiental suave bajo el cursor (Foco tenue y elegante)
+      if (mouse.x > -500 && mouse.y > -500) {
+        const spotRadius = radius * 0.95;
+        const spotlight = ctx.createRadialGradient(
+          mouse.x,
+          mouse.y,
+          0,
+          mouse.x,
+          mouse.y,
+          spotRadius
+        );
+        spotlight.addColorStop(0, 'rgba(56, 189, 248, 0.055)');
+        spotlight.addColorStop(0.45, 'rgba(37, 99, 235, 0.025)');
+        spotlight.addColorStop(0.8, 'rgba(147, 51, 234, 0.008)');
+        spotlight.addColorStop(1, 'rgba(9, 11, 16, 0)');
+        ctx.fillStyle = spotlight;
+        ctx.fillRect(0, 0, width, height);
+      }
+
       // 2. Dibujar líneas horizontales de la tela líquida con curvatura suave
       ctx.lineWidth = 1;
       for (let r = 0; r < rows; r++) {
@@ -322,6 +341,26 @@ export const LiquidGridBackground: React.FC = () => {
         const last = points[rows - 1][c];
         ctx.lineTo(last.x, last.y);
         ctx.stroke();
+      }
+
+      // Nodos reactivos sutiles bajo el cursor
+      if (mouse.x > -500 && mouse.y > -500) {
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const p = points[r][c];
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 140 && dist > 0) {
+              const factor = 1 - dist / 140;
+              ctx.fillStyle = `rgba(56, 189, 248, ${factor * 0.3})`;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, 1.2 + factor * 0.8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
       }
 
       // 4. Dibujar ondas de choque sutiles que se propagan
