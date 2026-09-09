@@ -202,6 +202,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               title="Presets de 1-Clic"
               description="Aplica combinaciones predefinidas de formato, peso y dimensiones optimizadas para E-commerce, Redes Sociales o Emailing."
               tip="También puedes guardar tu configuración actual como un preset personalizado."
+              placement="bottom"
             />
           </div>
 
