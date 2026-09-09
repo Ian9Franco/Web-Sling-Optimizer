@@ -9,6 +9,7 @@ import {
   List,
   Bot
 } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
 
 interface ImageToolbarProps {
   count: number;
@@ -38,9 +39,15 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
   return (
     <div className="flex-shrink-0 flex items-center justify-between p-3 panel-border">
       <div className="flex items-center gap-3">
-        <span className="font-mono text-xs uppercase text-slate-400 font-bold">
-          Archivos ({count})
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-mono text-xs uppercase text-slate-400 font-bold">
+            Archivos ({count})
+          </span>
+          <InfoTooltip
+            title="Cola de Imágenes"
+            description="Lista de imágenes cargadas listas para compresión, reescalado, renombrado SEO y extracción de metadatos C2PA."
+          />
+        </div>
         <div className="flex bg-[#0c0d10] border border-[#232730] rounded p-0.5">
           <button
             type="button"
@@ -63,27 +70,41 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
 
       <div className="flex items-center gap-2">
         {onBatchAI && (
-          <button
-            type="button"
-            onClick={onBatchAI}
-            disabled={isAnalyzingAI || count === 0}
-            className="flex items-center gap-1.5 text-xs font-mono text-emerald-300 hover:text-white px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500 transition disabled:opacity-40"
-            title="Analizar todo el lote con IA para generar Nombres SEO y Texto ALT"
-          >
-            <Bot className={`w-3.5 h-3.5 text-emerald-400 ${isAnalyzingAI ? 'animate-spin' : ''}`} />
-            <span>{isAnalyzingAI ? 'Analizando IA...' : 'Auto SEO con IA'}</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onBatchAI}
+              disabled={isAnalyzingAI || count === 0}
+              className="flex items-center gap-1.5 text-xs font-mono text-emerald-300 hover:text-white px-2.5 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 hover:border-emerald-500 transition disabled:opacity-40"
+              title="Analizar todo el lote con IA para generar Nombres SEO y Texto ALT"
+            >
+              <Bot className={`w-3.5 h-3.5 text-emerald-400 ${isAnalyzingAI ? 'animate-spin' : ''}`} />
+              <span>{isAnalyzingAI ? 'Analizando IA...' : 'Auto SEO con IA'}</span>
+            </button>
+            <InfoTooltip
+              title="Auto SEO en Lote con IA"
+              description="Analiza visualmente todas las imágenes del lote en paralelo usando el modelo de visión seleccionado para asignarles automáticamente un nombre semántico (kebab-case) y un texto ALT descriptivo optimizado para SEO."
+              placement="bottom"
+            />
+          </div>
         )}
 
-        <button
-          type="button"
-          onClick={onReprocess}
-          className="flex items-center gap-1.5 text-xs font-mono text-slate-300 hover:text-white px-2.5 py-1 rounded bg-[#14161b] border border-[#232730] hover:border-[#2563eb] transition"
-          title="Re-aplicar compresión y filtros a todo el lote"
-        >
-          <RotateCw className="w-3.5 h-3.5 text-[#2563eb]" />
-          <span>Re-aplicar Ajustes</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onReprocess}
+            className="flex items-center gap-1.5 text-xs font-mono text-slate-300 hover:text-white px-2.5 py-1 rounded bg-[#14161b] border border-[#232730] hover:border-[#2563eb] transition"
+            title="Re-aplicar compresión y filtros a todo el lote"
+          >
+            <RotateCw className="w-3.5 h-3.5 text-[#2563eb]" />
+            <span>Re-aplicar Ajustes</span>
+          </button>
+          <InfoTooltip
+            title="Reprocesar Lote Completo"
+            description="Aplica los parámetros actuales del panel lateral (calidad, formato, dimensiones, filtros de nitidez, marca de agua) a todas las imágenes cargadas."
+            placement="bottom"
+          />
+        </div>
 
         <button
           type="button"
@@ -95,15 +116,22 @@ export const ImageToolbar: React.FC<ImageToolbarProps> = ({
           <span>Limpiar</span>
         </button>
 
-        <button
-          type="button"
-          onClick={onDownloadZip}
-          disabled={isZipping || !hasDoneImages}
-          className="flex items-center gap-1.5 text-xs font-mono font-bold bg-[#e62429] hover:bg-[#ff3b30] text-white px-4 py-1.5 rounded transition shadow-md shadow-[#e62429]/30 disabled:opacity-40"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>{isZipping ? 'Empaquetando...' : 'DESCARGAR TODO (.ZIP)'}</span>
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onDownloadZip}
+            disabled={isZipping || !hasDoneImages}
+            className="flex items-center gap-1.5 text-xs font-mono font-bold bg-[#e62429] hover:bg-[#ff3b30] text-white px-4 py-1.5 rounded transition shadow-md shadow-[#e62429]/30 disabled:opacity-40"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{isZipping ? 'Empaquetando...' : 'DESCARGAR TODO (.ZIP)'}</span>
+          </button>
+          <InfoTooltip
+            title="Descarga en Lote ZIP"
+            description="Empaqueta todas las imágenes optimizadas en un archivo comprimido .zip listo para descargar directamente a tu equipo."
+            placement="bottom"
+          />
+        </div>
       </div>
     </div>
   );

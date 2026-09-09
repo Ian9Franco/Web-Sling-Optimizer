@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Package, Bot } from 'lucide-react';
+import { InfoTooltip } from './InfoTooltip';
 
 interface NavbarProps {
   onOpenFaviconModal: () => void;
@@ -46,33 +47,47 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         <div className="flex items-center gap-2.5 text-xs font-mono">
-          <button
-            type="button"
-            onClick={onOpenAIModal}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition border ${
-              isAIConfigured 
-                ? 'bg-[#111522] border-emerald-500/40 text-emerald-300 hover:border-emerald-500 hover:text-white' 
-                : 'bg-[#111522] border-[#232730] text-slate-300 hover:border-[#2563eb] hover:text-white'
-            }`}
-            title="Configuración de IA (Google Gemini / OpenAI)"
-          >
-            <Bot className="w-3.5 h-3.5 text-emerald-400" />
-            <span>IA SEO</span>
-            {isAIConfigured ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="IA Configurada y lista" />
-            ) : (
-              <span className="text-[10px] text-slate-500 font-normal">(Configurar)</span>
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onOpenAIModal}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded transition border ${
+                isAIConfigured 
+                  ? 'bg-[#111522] border-emerald-500/40 text-emerald-300 hover:border-emerald-500 hover:text-white' 
+                  : 'bg-[#111522] border-[#232730] text-slate-300 hover:border-[#2563eb] hover:text-white'
+              }`}
+              title="Configuración de IA (Google Gemini / OpenAI)"
+            >
+              <Bot className="w-3.5 h-3.5 text-emerald-400" />
+              <span>IA SEO</span>
+              {isAIConfigured ? (
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="IA Configurada y lista" />
+              ) : (
+                <span className="text-[10px] text-slate-500 font-normal">(Configurar)</span>
+              )}
+            </button>
+            <InfoTooltip
+              title="Módulo de IA Vision SEO"
+              description="Conecta tu API Key de Google Gemini o OpenAI para que un modelo de visión analice visualmente cada imagen y genere nombres de archivo semánticos y textos ALT optimizados para accesibilidad y Google Images."
+              placement="bottom"
+            />
+          </div>
 
-          <button
-            type="button"
-            onClick={onOpenFaviconModal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#2563eb] text-white hover:bg-[#3b82f6] transition shadow-md shadow-[#2563eb]/20"
-          >
-            <Package className="w-3.5 h-3.5" />
-            <span>Favicon Generator</span>
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={onOpenFaviconModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#2563eb] text-white hover:bg-[#3b82f6] transition shadow-md shadow-[#2563eb]/20"
+            >
+              <Package className="w-3.5 h-3.5" />
+              <span>Favicon Generator</span>
+            </button>
+            <InfoTooltip
+              title="Generador de Favicon Multi-plataforma"
+              description="Convierte cualquier imagen o logo en un paquete completo de favicons: favicon.ico multi-resolución (16x16, 32x32, 48x48), PNGs para Apple Touch Icon, Android Chrome PWA (192x192, 512x512) y el archivo manifest.json listo para copiar."
+              placement="bottom"
+            />
+          </div>
 
           {hasImages && (
             totalSavedBytes >= 0 ? (

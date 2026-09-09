@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crop, Eye, Download, Trash2, Code, Bot, Sparkles, Info } from 'lucide-react';
 import { ProcessedImage } from '../types/image';
+import { InfoTooltip } from './InfoTooltip';
 
 interface ImageTableProps {
   images: ProcessedImage[];
@@ -37,11 +38,52 @@ export const ImageTable: React.FC<ImageTableProps> = ({
         <thead className="bg-[#0c0d10] border-b border-[#232730] text-slate-400 uppercase text-[9px] tracking-wider">
           <tr>
             <th className="py-2.5 px-2 w-12 text-center">Img</th>
-            <th className="py-2.5 px-2">Nombre & Alt (SEO)</th>
-            <th className="py-2.5 px-2 whitespace-nowrap">Dimensiones</th>
-            <th className="py-2.5 px-2 whitespace-nowrap">Peso</th>
-            <th className="py-2.5 px-2 whitespace-nowrap">Calidad</th>
-            <th className="py-2.5 px-2 text-right whitespace-nowrap">Acciones</th>
+            <th className="py-2.5 px-2">
+              <div className="flex items-center gap-1">
+                <span>Nombre & Alt (SEO)</span>
+                <InfoTooltip
+                  title="Nombres SEO & Accesibilidad"
+                  description="Edita el nombre de archivo final optimizado para URLs y motores de búsqueda. El texto ALT describe la imagen para personas con discapacidad visual y mejora el indexado en Google Imágenes."
+                />
+              </div>
+            </th>
+            <th className="py-2.5 px-2 whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                <span>Dimensiones</span>
+                <InfoTooltip
+                  title="Dimensiones & Escalado"
+                  description="Muestra el ancho y alto final en píxeles. Si aplicaste Super-Resolución (2x/4x) o reescalado, verás aquí la comparación directa con el original."
+                />
+              </div>
+            </th>
+            <th className="py-2.5 px-2 whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                <span>Peso</span>
+                <InfoTooltip
+                  title="Peso & Ahorro de Bytes"
+                  description="Muestra el tamaño optimizado final, el tamaño original y el porcentaje neto de peso ahorrado. Archivos mayores a 4.5MB se adaptan automáticamente para evitar límites de servidor."
+                />
+              </div>
+            </th>
+            <th className="py-2.5 px-2 whitespace-nowrap">
+              <div className="flex items-center gap-1">
+                <span>Calidad</span>
+                <InfoTooltip
+                  title="Calidad & Formato"
+                  description="Indica el porcentaje de calidad aplicado, el formato final (WebP, AVIF, JPG, PNG) y el estado del filtro Claridad HD."
+                />
+              </div>
+            </th>
+            <th className="py-2.5 px-2 text-right whitespace-nowrap">
+              <div className="flex items-center justify-end gap-1">
+                <span>Acciones</span>
+                <InfoTooltip
+                  title="Acciones por Imagen"
+                  description="Inspeccionar Metadatos / C2PA IA, Generar código HTML <picture> responsive (srcset), Recortador de formatos Ads, Comparador visual interactivo y Descarga individual."
+                  placement="bottom"
+                />
+              </div>
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-[#232730]">

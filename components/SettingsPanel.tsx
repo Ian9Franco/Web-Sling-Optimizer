@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { CropFit, CropPosition, ReprocessOverrides, CustomPreset, ProcessedImage } from '../types/image';
 import { resolveFileNamePattern } from '../utils/naming';
+import { InfoTooltip } from './InfoTooltip';
 
 interface SettingsPanelProps {
   preserveQuality: boolean;
@@ -197,6 +198,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="flex items-center gap-1.5 text-xs font-mono text-slate-300 font-bold uppercase">
             <Zap className="w-3.5 h-3.5 text-[#e62429]" />
             <span>Presets de 1-Clic</span>
+            <InfoTooltip
+              title="Presets de 1-Clic"
+              description="Aplica combinaciones predefinidas de formato, peso y dimensiones optimizadas para E-commerce, Redes Sociales o Emailing."
+              tip="También puedes guardar tu configuración actual como un preset personalizado."
+            />
           </div>
 
           <button
@@ -327,7 +333,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         {/* Modo de Compresión: Preservar vs Calidad (%) vs Límite KB */}
         <div className="space-y-2.5">
           <div className="flex justify-between items-center text-xs font-mono">
-            <span className="text-slate-400">Tratamiento de Calidad:</span>
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <span>Tratamiento de Calidad:</span>
+              <InfoTooltip
+                title="Tratamiento de Calidad"
+                description="Elige entre Sin Pérdida (100% nitidez original), Calidad fija % (control por ratio de compresión) o Límite KB (ajuste iterativo automático para no superar un peso máximo)."
+                tip="Para tiendas online o páginas web, 'Límite KB' (100-200 KB) garantiza tiempos de carga ultrarrápidos sin superar pesos permitidos."
+              />
+            </div>
             <span className={
               qualityMode === 'preserve' 
                 ? 'text-emerald-400 font-bold' 
@@ -475,7 +488,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         {/* Control de Dimensiones */}
         <div className="space-y-3 pt-3 border-t border-[#232730]">
           <div className="flex justify-between items-center text-xs font-mono">
-            <span className="text-slate-400">Dimensiones:</span>
+            <div className="flex items-center gap-1.5 text-slate-400">
+              <span>Dimensiones:</span>
+              <InfoTooltip
+                title="Dimensiones & Recorte"
+                description="Ajusta el ancho y alto máximos en píxeles. 'Sin Alterar' mantiene las dimensiones originales. 'Personalizar' te permite escalar o recortar a medidas exactas o presets de Ads."
+                tip="Si solo defines el ancho, la altura se calculará proporcionalmente en modo automático."
+              />
+            </div>
             <span className="text-slate-200 font-semibold">
               {resizeMode === 'none' ? 'Originales' : 'Personalizadas'}
             </span>
@@ -567,7 +587,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
               {/* Modo de Ajuste: Escalar vs Recortar */}
               <div className="space-y-2 pt-2 border-t border-[#232730]">
-                <label className="text-[10px] font-mono text-slate-400 block font-bold">Modo de Recorte (Sin Estirar):</label>
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[10px] font-mono text-slate-400 block font-bold">Modo de Recorte (Sin Estirar):</label>
+                  <InfoTooltip
+                    title="Modos de Ajuste"
+                    description="'Sin Cortar (Escalar)' reduce la imagen encajándola proporcionalmente. 'Recortar Formato Exacto' llena las dimensiones exactas recortando los bordes sobrantes."
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
                   <button
                     type="button"
@@ -597,7 +623,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               {/* Enfoque / Zona de Recorte */}
               {cropFit === 'cover' && (
                 <div className="space-y-1.5 pt-2 border-t border-[#232730]">
-                  <label className="text-[10px] font-mono text-slate-400 block font-bold">Enfoque / Zona de Recorte:</label>
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[10px] font-mono text-slate-400 block font-bold">Enfoque / Zona de Recorte:</label>
+                    <InfoTooltip
+                      title="Enfoque Inteligente por IA"
+                      description="Determina la zona prioritaria al recortar. 'IA Enfoque Inteligente' preserva zonas con mayor detalle/textura, mientras que 'IA Sujeto / Rostros' centra automáticamente personas y elementos prominentes."
+                    />
+                  </div>
                   <select
                     value={cropPosition}
                     onChange={(e) => setCropPosition(e.target.value as CropPosition)}
@@ -618,10 +650,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         {/* Super-Resolución (Upscaling) & Claridad HD */}
         <div className="space-y-3 pt-3 border-t border-[#232730]">
           <div className="flex items-center justify-between">
-            <label className="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Super-Resolución & Claridad</span>
-            </label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-mono font-bold text-slate-300 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Super-Resolución & Claridad</span>
+              </label>
+              <InfoTooltip
+                title="Super-Resolución & Claridad HD"
+                description="Multiplica la resolución de imagen (2x o 4x) con interpolación de píxeles Lanczos3 y aplica un filtro de nitidez Unsharp Masking + Denoise para evitar artefactos."
+                tip="Excelente para mejorar capturas pequeñas, logos o fotos antes de colocarlas en pantallas de alta densidad (Retina)."
+              />
+            </div>
             <span className="text-[9px] font-mono bg-amber-500/10 border border-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded">
               Lanczos3 HD
             </span>
@@ -677,7 +716,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         {/* Formato de Salida */}
         <div className="space-y-2 pt-3 border-t border-[#232730]">
           <div className="flex justify-between items-center">
-            <label className="text-xs font-mono text-slate-400 block">Formato de Salida</label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-mono text-slate-400 block">Formato de Salida</label>
+              <InfoTooltip
+                title="Formatos de Imagen"
+                description="Convierte tus imágenes a WebP o AVIF para lograr la máxima compresión y velocidad web. JPG para máxima compatibilidad, PNG para transparencias, y TIFF/HEIC para edición profesional."
+                tip="WebP y AVIF son los estándares recomendados por Google PageSpeed para mejorar el SEO."
+              />
+            </div>
             <span className="text-[10px] font-mono text-slate-500">Web &amp; Especiales</span>
           </div>
           <select
@@ -707,7 +753,14 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         {/* Herramientas de Edición & Seguridad */}
         <div className="space-y-3 pt-3 border-t border-[#232730]">
           <div className="flex justify-between items-center text-xs font-mono text-slate-400">
-            <span className="font-bold text-slate-300">Edición & Seguridad EXIF</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-bold text-slate-300">Edición & Seguridad EXIF</span>
+              <InfoTooltip
+                title="Edición & Seguridad EXIF"
+                description="Permite rotar en pasos de 90°, espejar horizontalmente, pasar a blanco y negro y purgar metadatos sensibles (geolocalización GPS, número de serie de cámara, fecha exacta)."
+                tip="Limpiar metadatos EXIF no solo protege la privacidad sino que ahorra varios KB adicionales por archivo."
+              />
+            </div>
           </div>
 
           {/* Rotación y Espejo */}
@@ -767,10 +820,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {/* Marca de Agua */}
           <div className="space-y-1 pt-1">
-            <label className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
-              <Type className="w-3 h-3 text-[#e62429]" />
-              <span>Marca de Agua en Texto (opcional)</span>
-            </label>
+            <div className="flex items-center gap-1.5">
+              <label className="text-[10px] font-mono text-slate-400 flex items-center gap-1">
+                <Type className="w-3 h-3 text-[#e62429]" />
+                <span>Marca de Agua en Texto (opcional)</span>
+              </label>
+              <InfoTooltip
+                title="Marca de Agua"
+                description="Estampa una marca de autor o copyright semi-transparente en la esquina inferior derecha de cada imagen procesada mediante renderizado vectorial SVG."
+              />
+            </div>
             <input
               type="text"
               placeholder="Ej. © MiMarca.com"
@@ -783,10 +842,17 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           {/* Nombre de Archivo Personalizado / Patrón Dinámico */}
           <div className="space-y-2 pt-2 border-t border-[#232730]">
             <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
-              <label className="flex items-center gap-1 text-slate-300 font-bold">
-                <Copy className="w-3 h-3 text-[#2563eb]" />
-                <span>Patrón de Renombrado en Lote</span>
-              </label>
+              <div className="flex items-center gap-1.5">
+                <label className="flex items-center gap-1 text-slate-300 font-bold">
+                  <Copy className="w-3 h-3 text-[#2563eb]" />
+                  <span>Patrón de Renombrado en Lote</span>
+                </label>
+                <InfoTooltip
+                  title="Patrón de Renombrado SEO"
+                  description="Aplica un formato consistente a todos los archivos usando comodines: {slug} (limpio sin tildes ni espacios), {width}, {height}, {quality}, {format}, {index} y {0index}."
+                  tip="Usa 'Auto-Slugify' para transformar nombres desordenados en nombres optimizados para buscadores con 1 solo clic."
+                />
+              </div>
               {onApplyBatchSlugify && (
                 <button
                   type="button"
