@@ -25,7 +25,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   formatBytes,
 }) => {
   return (
-    <nav className="sticky top-0 z-40 bg-[#07090e]/85 backdrop-blur-xl border-b border-[#1b2234]/80 shadow-[0_4px_30px_rgba(0,0,0,0.7)] relative before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-[#e62429]/50 before:to-transparent">
+    <nav className="sticky top-0 z-40 bg-[#06080d]/85 backdrop-blur-2xl border-b border-[#1f283d] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.92),0_4px_16px_rgba(0,0,0,0.7)] relative before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-white/15 before:to-transparent after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[1px] after:bg-gradient-to-r after:from-transparent after:via-[#2563eb]/50 after:via-[#e62429]/50 after:to-transparent">
       <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
         {/* Logo & Branding con Motion Animation */}
@@ -98,13 +98,12 @@ export const Navbar: React.FC<NavbarProps> = ({
             </motion.div>
 
             <motion.div 
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono bg-[#111728]/90 text-cyan-300 border border-cyan-500/25 rounded-full shadow-inner"
+              className="hidden sm:inline-flex items-center px-2.5 py-0.5 text-[10px] font-mono bg-[#111728]/90 text-cyan-300 border border-cyan-500/25 rounded-full shadow-inner"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2, duration: 0.3 }}
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span>v2.0 &bull; ahora si, con IA </span>
+              <span>v2.0 &bull; ahora si, con IA</span>
             </motion.div>
           </div>
         </div>
