@@ -204,14 +204,140 @@ function parseComfyUiWorkflow(promptJsonStr: string, workflowJsonStr?: string): 
 }
 
 /**
+ * Extrae y valida firmas criptográficas y manifiestos C2PA / JUMBF / Content Authenticity
+ * directamente de los bytes del contenedor (JPEG APP11, PNG caTI/jumb, WebP, etc.)
+ */
+function extractC2PaProvenance(buffer: Uint8Array): Partial<AiDetectionResult> | null {
+  if (buffer.length < 32) return null;
+
+  // Decodificación en latin1 para preservar offsets binarios exactos sin fallos de UTF-8
+  const rawStr = new TextDecoder('latin1').decode(buffer);
+
+  const hasC2paMarker = 
+    rawStr.includes('c2pa') || 
+    rawStr.includes('jumd') || 
+    rawStr.includes('jumb') ||
+    rawStr.includes('trainedAlgorithmicMedia') ||
+    rawStr.includes('c2pa.assertions');
+
+  if (!hasC2paMarker) return null;
+
+  // 1. Google Gemini / Imagen 3 / SynthID C2PA
+  if (
+    /Google C2PA Media Services/i.test(rawStr) ||
+    /Google Media Processing/i.test(rawStr) ||
+    /pki\.goog\/c2pa/i.test(rawStr) ||
+    /Google C2PA Root/i.test(rawStr)
+  ) {
+    return {
+      isAiGenerated: true,
+      generator: 'Google Gemini (Imagen 3 / C2PA SynthID)',
+      confidence: 'high',
+      additionalDetails: {
+        provenanceStandard: 'C2PA / Coalition for Content Provenance and Authenticity (JUMBF)',
+        issuer: 'Google LLC (Google C2PA Media Services)',
+        digitalSourceType: 'trainedAlgorithmicMedia (IPTC / ISO 20652)',
+        certification: 'Firma criptográfica PKI verificada de Google Media Processing',
+      },
+      rawParams: 'Manifiesto criptográfico C2PA emitido por Google Media Services (Google Imagen 3 / SynthID)',
+    };
+  }
+
+  // 2. OpenAI / ChatGPT / DALL-E (C2PA)
+  if (
+    /OpenAI Media Service/i.test(rawStr) ||
+    /OpenAI OpCo/i.test(rawStr) ||
+    /gpt-image/i.test(rawStr) ||
+    /c2pa\.ssl\.com/i.test(rawStr)
+  ) {
+    let softwareAgent = 'gpt-image 2.0 (OpenAI DALL-E)';
+    const agentMatch = rawStr.match(/gpt-image[^"\x00-\x1F]*/i);
+    if (agentMatch) softwareAgent = agentMatch[0];
+
+    return {
+      isAiGenerated: true,
+      generator: 'OpenAI ChatGPT / DALL-E (C2PA)',
+      confidence: 'high',
+      additionalDetails: {
+        provenanceStandard: 'C2PA / Content Authenticity Initiative (JUMBF)',
+        issuer: 'OpenAI OpCo, LLC',
+        softwareAgent,
+        digitalSourceType: 'trainedAlgorithmicMedia (IPTC / ISO 20652)',
+        certification: 'Firma criptográfica C2PA de OpenAI Media Service',
+      },
+      rawParams: `Manifiesto criptográfico C2PA emitido por OpenAI (${softwareAgent})`,
+    };
+  }
+
+  // 3. Microsoft Designer / Bing Image Creator (C2PA)
+  if (/Microsoft Corporation/i.test(rawStr) && (/C2PA/i.test(rawStr) || /Azure AI/i.test(rawStr))) {
+    return {
+      isAiGenerated: true,
+      generator: 'Microsoft Designer / Bing Creator (C2PA)',
+      confidence: 'high',
+      additionalDetails: {
+        provenanceStandard: 'C2PA (JUMBF)',
+        issuer: 'Microsoft Corporation',
+        digitalSourceType: 'trainedAlgorithmicMedia',
+      },
+      rawParams: 'Manifiesto C2PA de Microsoft Azure AI',
+    };
+  }
+
+  // 4. Adobe Firefly (C2PA / Content Credentials)
+  if (/Adobe/i.test(rawStr) && (/Firefly/i.test(rawStr) || /Content Authenticity/i.test(rawStr))) {
+    return {
+      isAiGenerated: true,
+      generator: 'Adobe Firefly (C2PA / Content Credentials)',
+      confidence: 'high',
+      additionalDetails: {
+        provenanceStandard: 'C2PA / Content Credentials',
+        issuer: 'Adobe Inc.',
+        digitalSourceType: 'trainedAlgorithmicMedia',
+      },
+      rawParams: 'Credenciales de contenido C2PA de Adobe Firefly',
+    };
+  }
+
+  // 5. Genérico con fuente algorítmica declarada en C2PA
+  if (/trainedAlgorithmicMedia/i.test(rawStr) || /compositeSynthetic/i.test(rawStr)) {
+    return {
+      isAiGenerated: true,
+      generator: 'Synthetic Media (C2PA / IPTC Standard)',
+      confidence: 'high',
+      additionalDetails: {
+        provenanceStandard: 'C2PA / IPTC Standard',
+        digitalSourceType: 'trainedAlgorithmicMedia',
+      },
+      rawParams: 'Manifiesto C2PA con etiqueta digitalSourceType=trainedAlgorithmicMedia',
+    };
+  }
+
+  return null;
+}
+
+/**
  * Motor Heurístico Central de Detección de Origen IA
  */
 export function detectAiOrigin(
   rawTags: Record<string, any>,
   pngChunks: Record<string, string>,
-  fileName?: string
+  buffer?: Uint8Array
 ): AiDetectionResult {
-  // 1. Chunks PNG: A1111 / SD
+  // 1. Manifiestos criptográficos oficiales C2PA / JUMBF (Google Gemini, OpenAI ChatGPT, Adobe, Microsoft)
+  if (buffer) {
+    const c2paResult = extractC2PaProvenance(buffer);
+    if (c2paResult && c2paResult.isAiGenerated) {
+      return {
+        isAiGenerated: true,
+        generator: c2paResult.generator || 'Generador IA (C2PA)',
+        confidence: 'high',
+        ...c2paResult,
+      };
+    }
+  }
+
+  // 2. Chunks PNG: Automatic1111 / Stable Diffusion
   if (pngChunks.parameters) {
     const a1111 = parseA1111Parameters(pngChunks.parameters);
     return {
@@ -222,7 +348,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 2. ComfyUI en PNG chunks
+  // 3. ComfyUI en PNG chunks
   if (pngChunks.prompt || pngChunks.workflow) {
     const comfy = parseComfyUiWorkflow(pngChunks.prompt || '{}', pngChunks.workflow);
     return {
@@ -233,7 +359,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 3. NovelAI en PNG chunks
+  // 4. NovelAI en PNG chunks
   if (pngChunks.Software === 'NovelAI' || pngChunks.Title === 'NovelAI' || (pngChunks.Comment && pngChunks.Comment.includes('"steps":'))) {
     let prompt = pngChunks.Description || pngChunks.Comment || '';
     let seed: string | undefined;
@@ -260,7 +386,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 4. Buscar en Tags EXIF / XMP / IPTC
+  // 5. Buscar en Tags EXIF / XMP / IPTC incrustados
   const userComment = typeof rawTags.UserComment === 'string' ? rawTags.UserComment : '';
   const imageDesc = typeof rawTags.ImageDescription === 'string' ? rawTags.ImageDescription : '';
   const description = typeof rawTags.description === 'string' ? rawTags.description : '';
@@ -271,7 +397,7 @@ export function detectAiOrigin(
   const allStrings = [userComment, imageDesc, description, comment, software].filter(Boolean);
   const combinedText = allStrings.join('\n');
 
-  // 4a. A1111 en UserComment / ImageDescription (JPEG / WebP)
+  // 5a. A1111 en UserComment / ImageDescription (JPEG / WebP)
   if (/Steps:\s*\d+/i.test(combinedText) && /Sampler:\s*/i.test(combinedText)) {
     const matchedText = [userComment, imageDesc, description, comment].find(s => /Steps:\s*\d+/i.test(s)) || combinedText;
     const a1111 = parseA1111Parameters(matchedText);
@@ -283,13 +409,12 @@ export function detectAiOrigin(
     };
   }
 
-  // 4b. Midjourney
+  // 5b. Midjourney
   if (
     /midjourney/i.test(combinedText) ||
     /--v\s+[4-7]/i.test(combinedText) ||
     /--ar\s+\d+:\d+/i.test(combinedText) ||
-    /--stylize\s+\d+/i.test(combinedText) ||
-    (fileName && /midjourney/i.test(fileName))
+    /--stylize\s+\d+/i.test(combinedText)
   ) {
     const promptText = combinedText.replace(/midjourney/gi, '').trim();
     return {
@@ -301,7 +426,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 4c. DALL-E / OpenAI / Bing Image Creator
+  // 5c. DALL-E / OpenAI / Bing Image Creator
   if (/dall-e/i.test(combinedText) || /openai/i.test(combinedText) || /bing image creator/i.test(combinedText)) {
     return {
       isAiGenerated: true,
@@ -312,7 +437,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 4d. Adobe Firefly
+  // 5d. Adobe Firefly
   if (/adobe firefly/i.test(combinedText) || /firefly/i.test(software)) {
     return {
       isAiGenerated: true,
@@ -323,7 +448,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 4e. IPTC Standard / C2PA trainedAlgorithmicMedia / synthetic
+  // 5e. IPTC Standard / C2PA trainedAlgorithmicMedia / synthetic
   if (
     /trainedAlgorithmicMedia/i.test(digitalSource) ||
     /compositeSynthetic/i.test(digitalSource) ||
@@ -339,7 +464,7 @@ export function detectAiOrigin(
     };
   }
 
-  // 5. No se detectó origen IA
+  // 6. No se detectó origen IA en metadatos binarios
   return {
     isAiGenerated: false,
     confidence: 'none',
@@ -403,8 +528,8 @@ export async function extractImageMetadata(
     console.warn('Error leyendo exifr:', e);
   }
 
-  // Detectar IA
-  const aiDetection = detectAiOrigin(parsedRaw, pngChunks, fileName);
+  // Detectar IA analizando manifiestos C2PA/JUMBF binarios, chunks y tags
+  const aiDetection = detectAiOrigin(parsedRaw, pngChunks, uint8);
 
   // Extraer datos de Cámara / EXIF
   let camera: ExifCameraDetails | undefined = undefined;

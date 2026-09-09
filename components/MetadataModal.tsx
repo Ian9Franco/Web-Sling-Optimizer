@@ -367,6 +367,42 @@ export const MetadataModal: React.FC<MetadataModalProps> = ({
                     </div>
                   )}
 
+                  {/* Detalles C2PA / Content Authenticity */}
+                  {ai?.additionalDetails && Object.keys(ai.additionalDetails).length > 0 && (
+                    <div className="bg-[#090b10] border border-purple-500/30 rounded-xl p-4 space-y-3">
+                      <span className="text-purple-300 font-bold flex items-center gap-1.5 uppercase text-[11px]">
+                        <ShieldCheck className="w-4 h-4 text-purple-400" />
+                        Certificación C2PA / Content Credentials Incrustada
+                      </span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {ai.additionalDetails.issuer && (
+                          <div className="bg-[#111420] border border-[#232730] p-2.5 rounded-lg">
+                            <span className="text-slate-500 text-[9.5px] uppercase font-bold block">Entidad Emisora / Certificador</span>
+                            <span className="text-white font-bold block mt-0.5">{ai.additionalDetails.issuer}</span>
+                          </div>
+                        )}
+                        {ai.additionalDetails.provenanceStandard && (
+                          <div className="bg-[#111420] border border-[#232730] p-2.5 rounded-lg">
+                            <span className="text-slate-500 text-[9.5px] uppercase font-bold block">Estándar de Procedencia</span>
+                            <span className="text-purple-300 font-bold block mt-0.5">{ai.additionalDetails.provenanceStandard}</span>
+                          </div>
+                        )}
+                        {ai.additionalDetails.digitalSourceType && (
+                          <div className="bg-[#111420] border border-[#232730] p-2.5 rounded-lg">
+                            <span className="text-slate-500 text-[9.5px] uppercase font-bold block">Tipo de Medio Digital (IPTC)</span>
+                            <span className="text-emerald-400 font-bold block mt-0.5">{ai.additionalDetails.digitalSourceType}</span>
+                          </div>
+                        )}
+                        {ai.additionalDetails.softwareAgent && (
+                          <div className="bg-[#111420] border border-[#232730] p-2.5 rounded-lg">
+                            <span className="text-slate-500 text-[9.5px] uppercase font-bold block">Agente de Software</span>
+                            <span className="text-cyan-300 font-bold block mt-0.5">{ai.additionalDetails.softwareAgent}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Workflow JSON (ComfyUI) */}
                   {ai?.workflowJson && (
                     <div className="bg-[#090b10] border border-[#232730] rounded-xl p-4 space-y-2">

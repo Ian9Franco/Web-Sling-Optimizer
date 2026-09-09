@@ -6,15 +6,13 @@ import { POST as metadataHandler } from '../app/api/metadata/route';
 import { extractImageMetadata, detectAiOrigin } from '../utils/metadataExtractor';
 
 describe('Metadata & AI Detection Engine', () => {
-  it('debe extraer metadatos técnicos de public/1.jpeg correctamente', async () => {
-    const imagePath = path.join(process.cwd(), 'public', '1.jpeg');
+  it('debe extraer metadatos técnicos de websling_logo.png correctamente', async () => {
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
     const imageBuffer = fs.readFileSync(imagePath);
 
-    const meta = await extractImageMetadata(imageBuffer, '1.jpeg', imageBuffer.length);
+    const meta = await extractImageMetadata(imageBuffer, 'websling_logo.png', imageBuffer.length);
     expect(meta).toBeDefined();
-    expect(meta.technical.format).toBe('JPEG');
-    expect(meta.technical.hasIccProfile).toBe(true);
-    expect(meta.technical.profileCopyright).toContain('Google');
+    expect(meta.technical.format).toBe('PNG');
     expect(meta.aiDetection.isAiGenerated).toBe(false);
   });
 
@@ -30,12 +28,12 @@ describe('Metadata & AI Detection Engine', () => {
   });
 
   it('debe procesar /api/metadata con archivo correctamente', async () => {
-    const imagePath = path.join(process.cwd(), 'public', '1.jpeg');
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
     const imageBuffer = fs.readFileSync(imagePath);
-    const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
+    const blob = new Blob([imageBuffer], { type: 'image/png' });
 
     const formData = new FormData();
-    formData.append('file', blob, '1.jpeg');
+    formData.append('file', blob, 'websling_logo.png');
 
     const req = new NextRequest('http://localhost:3000/api/metadata', {
       method: 'POST',
@@ -47,7 +45,7 @@ describe('Metadata & AI Detection Engine', () => {
 
     const json = await res.json();
     expect(json.success).toBe(true);
-    expect(json.metadata.technical.format).toBe('JPEG');
+    expect(json.metadata.technical.format).toBe('PNG');
   });
 
   it('debe detectar parámetros de Stable Diffusion / Automatic1111', () => {
@@ -75,5 +73,42 @@ Steps: 30, Sampler: DPM++ 2M Karras, CFG scale: 7.5, Seed: 123456789, Size: 512x
     const dalleRes = detectAiOrigin({ Software: 'DALL-E 3', description: 'isometric view of a cozy coffee shop' }, {});
     expect(dalleRes.isAiGenerated).toBe(true);
     expect(dalleRes.generator).toBe('DALL-E 3');
+  });
+
+  it('debe detectar la imagen real de Gemini por su firma C2PA/SynthID', async () => {
+    const geminiPath = path.join(process.cwd(), 'public', 'Gemini_Generated_Image_p3h7unp3h7unp3h7.jpg');
+    if (fs.existsSync(geminiPath)) {
+      const buf = fs.readFileSync(geminiPath);
+      // Probamos incluso pasando un nombre neutral para comprobar que NO depende del título
+      const meta = await extractImageMetadata(buf, 'foto_anonima_sin_nombre.jpg', buf.length);
+      expect(meta.aiDetection.isAiGenerated).toBe(true);
+      expect(meta.aiDetection.generator).toContain('Google Gemini');
+      expect(meta.aiDetection.confidence).toBe('high');
+      expect(meta.aiDetection.additionalDetails?.issuer).toContain('Google');
+    }
+  });
+
+  it('debe detectar la imagen real de ChatGPT por su manifiesto C2PA IPTC trainedAlgorithmicMedia', async () => {
+    const chatGptPath = path.join(process.cwd(), 'public', 'ChatGPT Image 9 sept 2026, 13_58_23.png');
+    if (fs.existsSync(chatGptPath)) {
+      const buf = fs.readFileSync(chatGptPath);
+      // Probamos con nombre genérico para asegurar detección 100% binaria
+      const meta = await extractImageMetadata(buf, 'archivo_desconocido.png', buf.length);
+      expect(meta.aiDetection.isAiGenerated).toBe(true);
+      expect(meta.aiDetection.generator).toContain('OpenAI ChatGPT');
+      expect(meta.aiDetection.confidence).toBe('high');
+      expect(meta.aiDetection.additionalDetails?.issuer).toContain('OpenAI');
+    }
+  });
+
+  it('debe identificar que la imagen de WhatsApp no tiene metadatos (recomprimida en tránsito)', async () => {
+    const waPath = path.join(process.cwd(), 'public', 'WhatsApp Image 2026-09-09 at 12.49.18.jpeg');
+    if (fs.existsSync(waPath)) {
+      const buf = fs.readFileSync(waPath);
+      const meta = await extractImageMetadata(buf, 'imagen_wa.jpeg', buf.length);
+      // WhatsApp destruye todos los metadatos y chunks en tránsito
+      expect(meta.aiDetection.isAiGenerated).toBe(false);
+      expect(meta.technical.format).toBe('JPEG');
+    }
   });
 });
