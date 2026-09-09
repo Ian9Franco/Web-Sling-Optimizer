@@ -115,6 +115,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [customPresets, setCustomPresets] = useState<CustomPreset[]>([]);
   const [isAddingPreset, setIsAddingPreset] = useState(false);
   const [newPresetName, setNewPresetName] = useState('');
+  const [isApplied, setIsApplied] = useState(false);
 
   // Cargar presets de usuario guardados en localStorage
   useEffect(() => {
@@ -799,36 +800,83 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               )}
             </div>
             
-            <input
-              type="text"
-              placeholder="Ej. {slug}-{width}x{height}"
-              value={customNamePattern}
-              onChange={(e) => setCustomNamePattern(e.target.value)}
-              className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 text-white outline-none"
-            />
-
-            {/* Tokens rápidos */}
-            <div className="flex flex-wrap gap-1 text-[9px] font-mono">
-              {[
-                { label: '{original}', token: '{original}' },
-                { label: '{slug}', token: '{slug}' },
-                { label: '{width}', token: '{width}' },
-                { label: '{height}', token: '{height}' },
-                { label: '{quality}', token: '{quality}' },
-                { label: '{format}', token: '{format}' },
-                { label: '{index}', token: '{index}' },
-                { label: '{0index}', token: '{0index}' },
-              ].map((t) => (
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Ej. {slug}-{width}x{height}"
+                value={customNamePattern}
+                onChange={(e) => setCustomNamePattern(e.target.value)}
+                className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 pr-8 text-white outline-none"
+              />
+              {customNamePattern && (
                 <button
-                  key={t.token}
                   type="button"
-                  onClick={() => setCustomNamePattern(prev => `${prev}${t.token}`)}
-                  className="bg-[#14161b] hover:border-[#2563eb] border border-[#232730] text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition"
-                  title={`Insertar comodín ${t.token}`}
+                  onClick={() => setCustomNamePattern('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white p-1"
+                  title="Limpiar patrón"
                 >
-                  +{t.label}
+                  <X className="w-3.5 h-3.5" />
                 </button>
-              ))}
+              )}
+            </div>
+
+            {/* Plantillas recomendadas y Tokens rápidos */}
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap gap-1 text-[9px] font-mono">
+                {[
+                  { label: '{original}', token: '{original}' },
+                  { label: '{slug}', token: '{slug}' },
+                  { label: '{width}', token: '{width}' },
+                  { label: '{height}', token: '{height}' },
+                  { label: '{quality}', token: '{quality}' },
+                  { label: '{format}', token: '{format}' },
+                  { label: '{index}', token: '{index}' },
+                  { label: '{0index}', token: '{0index}' },
+                ].map((t) => (
+                  <button
+                    key={t.token}
+                    type="button"
+                    onClick={() => {
+                      setCustomNamePattern(prev => {
+                        if (!prev) return t.token;
+                        // Si ya tiene contenido y no termina en separador, agregar guión inteligente
+                        const endsWithSep = /[-_.x/]$/i.test(prev);
+                        return endsWithSep ? `${prev}${t.token}` : `${prev}-${t.token}`;
+                      });
+                    }}
+                    className="bg-[#14161b] hover:border-[#2563eb] border border-[#232730] text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition active:scale-95"
+                    title={`Insertar comodín ${t.token}`}
+                  >
+                    +{t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Presets rápidos de 1 clic */}
+              <div className="flex items-center gap-1.5 text-[9px] text-slate-500 pt-0.5 overflow-x-auto scrollbar-none">
+                <span className="text-slate-400 flex-shrink-0 font-bold">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => setCustomNamePattern('{slug}-{width}x{height}')}
+                  className="px-1.5 py-0.5 rounded bg-[#090b10] border border-[#232730] hover:border-slate-500 text-slate-400 hover:text-white whitespace-nowrap transition"
+                >
+                  SEO + Medidas
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomNamePattern('{slug}-q{quality}-{0index}')}
+                  className="px-1.5 py-0.5 rounded bg-[#090b10] border border-[#232730] hover:border-slate-500 text-slate-400 hover:text-white whitespace-nowrap transition"
+                >
+                  Calidad + Índice
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCustomNamePattern('{original}-opt')}
+                  className="px-1.5 py-0.5 rounded bg-[#090b10] border border-[#232730] hover:border-slate-500 text-slate-400 hover:text-white whitespace-nowrap transition"
+                >
+                  Sufijo -opt
+                </button>
+              </div>
             </div>
 
             {/* Vista previa dinámica de renombramiento cuando se ingresa un patrón */}
@@ -863,16 +911,33 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               );
             })() : null}
 
-            {/* Botón de aplicación inmediata al lote */}
+            {/* Botón de aplicación inmediata al lote con feedback de éxito */}
             <button
               type="button"
-              onClick={() => onApplyBatchRename(customNamePattern)}
+              onClick={() => {
+                onApplyBatchRename(customNamePattern);
+                setIsApplied(true);
+                setTimeout(() => setIsApplied(false), 2500);
+              }}
               disabled={!customNamePattern.trim() || totalImages === 0}
-              className="w-full py-2 px-2 bg-[#2563eb] hover:bg-[#3b82f6] disabled:opacity-40 disabled:hover:bg-[#2563eb] text-white font-mono text-xs font-bold rounded transition flex items-center justify-center gap-1.5 shadow-sm shadow-[#2563eb]/30"
+              className={`w-full py-2 px-2 font-mono text-xs font-bold rounded transition flex items-center justify-center gap-1.5 shadow-sm ${
+                isApplied
+                  ? 'bg-emerald-600 text-white shadow-emerald-600/40 animate-in zoom-in-95 duration-150'
+                  : 'bg-[#2563eb] hover:bg-[#3b82f6] text-white shadow-[#2563eb]/30 disabled:opacity-40 disabled:hover:bg-[#2563eb]'
+              }`}
               title="Aplica este patrón inmediatamente a los nombres de salida de las imágenes actuales"
             >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Aplicar al Lote {totalImages > 0 ? `(${totalImages})` : ''}</span>
+              {isApplied ? (
+                <>
+                  <Check className="w-4 h-4 text-white animate-bounce" />
+                  <span>✓ ¡{totalImages} Nombres Aplicados con Éxito!</span>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Aplicar al Lote {totalImages > 0 ? `(${totalImages})` : ''}</span>
+                </>
+              )}
             </button>
           </div>
         </div>
