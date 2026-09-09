@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             {/* Contenedor del Icono con animación de flotación y rotación sutil */}
             <motion.div 
-              className="w-10 h-10 rounded-xl overflow-hidden border border-[#e62429]/60 shadow-[0_0_18px_rgba(230,36,41,0.4)] bg-[#0e121e] flex items-center justify-center p-1.5 relative"
+              className="w-11 h-11 rounded-xl overflow-hidden border border-[#e62429]/60 shadow-[0_0_20px_rgba(230,36,41,0.45)] bg-[#0c101c] flex items-center justify-center p-1 relative"
               animate={{
                 y: [0, -2, 0],
               }}
@@ -69,9 +69,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               <motion.img 
                 src="/websling_logo.png" 
                 alt="Web-Sling Logo" 
-                className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(230,36,41,0.7)]" 
+                className="w-full h-full object-contain filter drop-shadow-[0_0_10px_rgba(230,36,41,0.8)]" 
                 animate={{
-                  scale: [1, 1.05, 1]
+                  scale: [1, 1.06, 1]
                 }}
                 transition={{
                   duration: 2.5,
