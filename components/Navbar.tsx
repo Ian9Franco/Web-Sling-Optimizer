@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Package, Bot, Zap, Sparkles, Cpu } from 'lucide-react';
 import { InfoTooltip } from './InfoTooltip';
 
@@ -27,33 +28,84 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav className="sticky top-0 z-40 bg-[#07090e]/85 backdrop-blur-xl border-b border-[#1b2234]/80 shadow-[0_4px_30px_rgba(0,0,0,0.7)] relative before:absolute before:top-0 before:left-0 before:right-0 before:h-[1px] before:bg-gradient-to-r before:from-transparent before:via-[#e62429]/50 before:to-transparent">
       <div className="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         
-        {/* Logo & Branding */}
+        {/* Logo & Branding con Motion Animation */}
         <div className="flex items-center gap-3.5">
-          <div className="relative group cursor-pointer">
-            <div className="absolute -inset-1 bg-gradient-to-r from-[#e62429] to-[#2563eb] rounded-xl blur opacity-25 group-hover:opacity-60 transition duration-500" />
-            <div className="w-10 h-10 rounded-xl overflow-hidden border border-[#e62429]/50 shadow-[0_0_15px_rgba(230,36,41,0.3)] bg-[#0e121e] flex items-center justify-center p-1.5 relative transition-all duration-300 group-hover:scale-105">
-              <img 
+          <motion.div 
+            className="relative group cursor-pointer"
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+          >
+            {/* Resplandor ambiental animado */}
+            <motion.div 
+              className="absolute -inset-1.5 bg-gradient-to-r from-[#e62429] via-[#ff383e] to-[#2563eb] rounded-2xl blur-md opacity-30 group-hover:opacity-75"
+              animate={{ 
+                opacity: [0.25, 0.55, 0.25],
+                scale: [0.95, 1.08, 0.95],
+              }}
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+            />
+
+            {/* Contenedor del Icono con animación de flotación y rotación sutil */}
+            <motion.div 
+              className="w-10 h-10 rounded-xl overflow-hidden border border-[#e62429]/60 shadow-[0_0_18px_rgba(230,36,41,0.4)] bg-[#0e121e] flex items-center justify-center p-1.5 relative"
+              animate={{
+                y: [0, -2, 0],
+              }}
+              transition={{
+                duration: 2.5,
+                repeat: Infinity,
+                ease: 'easeInOut'
+              }}
+              whileHover={{
+                rotate: [0, -6, 6, -3, 0],
+                transition: { duration: 0.5 }
+              }}
+            >
+              <motion.img 
                 src="/websling_logo.png" 
                 alt="Web-Sling Logo" 
-                className="w-full h-full object-contain filter drop-shadow-[0_0_6px_rgba(230,36,41,0.6)]" 
+                className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(230,36,41,0.7)]" 
+                animate={{
+                  scale: [1, 1.05, 1]
+                }}
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut'
+                }}
               />
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2.5">
-            <div className="flex items-center gap-1.5">
+            <motion.div 
+              className="flex items-center gap-1.5"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+            >
               <span className="font-mono text-sm sm:text-base tracking-wider font-extrabold text-white uppercase">
                 Web-Sling
               </span>
               <span className="font-mono text-sm sm:text-base tracking-wider font-black uppercase bg-gradient-to-r from-[#ff383e] via-[#e62429] to-[#ff4757] bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(230,36,41,0.5)]">
                 Optimizer
               </span>
-            </div>
+            </motion.div>
 
-            <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono bg-[#111728]/90 text-cyan-300 border border-cyan-500/25 rounded-full shadow-inner">
+            <motion.div 
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[10px] font-mono bg-[#111728]/90 text-cyan-300 border border-cyan-500/25 rounded-full shadow-inner"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+            >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
               <span>v1.5 &bull; con IA Vision</span>
-            </div>
+            </motion.div>
           </div>
         </div>
 
