@@ -226,6 +226,26 @@ describe('API /api/compress', () => {
     expect(jsonBlack.success).toBe(true);
     expect(jsonBlack.finalWidth).toBe(1080);
     expect(jsonBlack.finalHeight).toBe(1920);
+
+    // Test con BorderPadding (15%) y Color Personalizado Hex (#111522)
+    const formPadding = new FormData();
+    formPadding.append('file', blob, 'horizontal.png');
+    formPadding.append('resizeMode', 'custom');
+    formPadding.append('maxWidth', '800');
+    formPadding.append('maxHeight', '800');
+    formPadding.append('cropFit', 'contain');
+    formPadding.append('cropPosition', 'top');
+    formPadding.append('borderPadding', '15');
+    formPadding.append('containBackground', '#111522');
+    formPadding.append('format', 'png');
+
+    const reqPadding = new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: formPadding });
+    const resPadding = await compressHandler(reqPadding);
+    expect(resPadding.status).toBe(200);
+    const jsonPadding = await resPadding.json();
+    expect(jsonPadding.success).toBe(true);
+    expect(jsonPadding.finalWidth).toBe(800);
+    expect(jsonPadding.finalHeight).toBe(800);
   });
 });
 

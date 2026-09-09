@@ -35,6 +35,7 @@ export default function HomePage() {
   const [cropFit, setCropFit] = useState<CropFit>('inside');
   const [cropPosition, setCropPosition] = useState<CropPosition>('center');
   const [containBackground, setContainBackground] = useState<ContainBackground>('blur');
+  const [borderPadding, setBorderPadding] = useState<number>(0);
   const [upscaleFactor, setUpscaleFactor] = useState<1 | 2 | 4>(1);
   const [clarity, setClarity] = useState<boolean>(false);
 
@@ -106,6 +107,7 @@ export default function HomePage() {
     cropFit,
     cropPosition,
     containBackground,
+    borderPadding,
     upscaleFactor,
     clarity,
   });
@@ -232,6 +234,8 @@ export default function HomePage() {
               setCropPosition={setCropPosition}
               containBackground={containBackground}
               setContainBackground={setContainBackground}
+              borderPadding={borderPadding}
+              setBorderPadding={setBorderPadding}
               upscaleFactor={upscaleFactor}
               setUpscaleFactor={setUpscaleFactor}
               clarity={clarity}
@@ -361,6 +365,8 @@ export default function HomePage() {
         setCropPosition={setCropPosition}
         containBackground={containBackground}
         setContainBackground={setContainBackground}
+        borderPadding={borderPadding}
+        setBorderPadding={setBorderPadding}
         onApplyCrop={handleApplyCrop}
       />
 

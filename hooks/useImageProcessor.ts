@@ -35,6 +35,7 @@ interface UseImageProcessorOptions {
   cropFit: CropFit;
   cropPosition: CropPosition;
   containBackground?: ContainBackground;
+  borderPadding?: number;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
 }
@@ -83,6 +84,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     cropFit,
     cropPosition,
     containBackground = 'blur',
+    borderPadding = 0,
     upscaleFactor = 1,
     clarity = false,
   } = options;
@@ -247,6 +249,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formData.append('cropFit', cropFit);
         formData.append('cropPosition', cropPosition);
         formData.append('containBackground', containBackground);
+        formData.append('borderPadding', borderPadding.toString());
         formData.append('upscaleFactor', upscaleFactor.toString());
         formData.append('clarity', clarity ? 'true' : 'false');
 
@@ -304,6 +307,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     const targetFit = overrides?.cropFit ?? cropFit;
     const targetPosition = overrides?.cropPosition ?? cropPosition;
     const targetContainBg = overrides?.containBackground ?? containBackground;
+    const targetBorderPad = overrides?.borderPadding ?? borderPadding;
     const targetUpscale = overrides?.upscaleFactor ?? upscaleFactor;
     const targetClarity = overrides?.clarity ?? clarity;
 
@@ -381,6 +385,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formData.append('cropFit', targetFit);
         formData.append('cropPosition', targetPosition);
         formData.append('containBackground', targetContainBg);
+        formData.append('borderPadding', targetBorderPad.toString());
         formData.append('upscaleFactor', targetUpscale.toString());
         formData.append('clarity', targetClarity ? 'true' : 'false');
 
@@ -568,6 +573,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       formData.append('cropFit', cropFit);
       formData.append('cropPosition', cropPosition);
       formData.append('containBackground', containBackground);
+      formData.append('borderPadding', borderPadding.toString());
       formData.append('upscaleFactor', upscaleFactor.toString());
       formData.append('clarity', clarity ? 'true' : 'false');
 
@@ -625,6 +631,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       formData.append('cropFit', cropFit);
       formData.append('cropPosition', cropPosition);
       formData.append('containBackground', containBackground);
+      formData.append('borderPadding', borderPadding.toString());
       formData.append('upscaleFactor', upscaleFactor.toString());
       formData.append('clarity', clarity ? 'true' : 'false');
 

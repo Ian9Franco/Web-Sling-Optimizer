@@ -5,6 +5,66 @@ import { RAW_CAMERA_REGEX } from '../../../utils/supportedFormats';
 // Límite de carga serverless para evitar fallos de infraestructura (4.5 MB)
 const MAX_FILE_SIZE_BYTES = 4.5 * 1024 * 1024;
 
+type SharpGravity = 'center' | 'north' | 'northeast' | 'east' | 'southeast' | 'south' | 'southwest' | 'west' | 'northwest';
+
+// Funciones auxiliares para composición, alineación y color
+function parseGravity(pos: string): SharpGravity {
+  switch (pos.toLowerCase()) {
+    case 'top':
+    case 'north':
+      return 'north';
+    case 'top-left':
+    case 'northwest':
+      return 'northwest';
+    case 'top-right':
+    case 'northeast':
+      return 'northeast';
+    case 'bottom':
+    case 'south':
+      return 'south';
+    case 'bottom-left':
+    case 'southwest':
+      return 'southwest';
+    case 'bottom-right':
+    case 'southeast':
+      return 'southeast';
+    case 'left':
+    case 'west':
+      return 'west';
+    case 'right':
+    case 'east':
+      return 'east';
+    case 'center':
+    default:
+      return 'center';
+  }
+}
+
+function parseHexColor(colorStr: string): { r: number; g: number; b: number; alpha: number } {
+  const norm = colorStr.toLowerCase().trim();
+  if (norm === 'black') return { r: 0, g: 0, b: 0, alpha: 1 };
+  if (norm === 'white') return { r: 255, g: 255, b: 255, alpha: 1 };
+  if (norm === 'transparent') return { r: 0, g: 0, b: 0, alpha: 0 };
+
+  const cleanHex = norm.replace('#', '');
+  if (cleanHex.length === 6) {
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      return { r, g, b, alpha: 1 };
+    }
+  } else if (cleanHex.length === 3) {
+    const r = parseInt(cleanHex[0] + cleanHex[0], 16);
+    const g = parseInt(cleanHex[1] + cleanHex[1], 16);
+    const b = parseInt(cleanHex[2] + cleanHex[2], 16);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      return { r, g, b, alpha: 1 };
+    }
+  }
+  return { r: 9, g: 11, b: 16, alpha: 1 };
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -29,8 +89,9 @@ export async function POST(req: NextRequest) {
     
     // Opciones avanzadas de Recorte y Aspect Ratio
     const cropFit = (formData.get('cropFit') as string) || 'inside'; // 'inside' | 'cover' | 'contain'
-    const cropPosition = (formData.get('cropPosition') as string) || 'center'; // 'center' | 'top' | 'bottom' | 'left' | 'right' | 'entropy' | 'attention'
-    const containBackground = (formData.get('containBackground') as string) || 'blur'; // 'blur' | 'black' | 'white' | 'transparent'
+    const cropPosition = (formData.get('cropPosition') as string) || 'center'; // 'center' | 'top' | 'bottom' | 'left' | 'right' | 'north' | 'south' | 'east' | 'west' | 'northeast' | 'northwest' | 'southeast' | 'southwest' | 'entropy' | 'attention'
+    const containBackground = (formData.get('containBackground') as string) || 'blur'; // 'blur' | 'black' | 'white' | 'transparent' | hex
+    const borderPadding = Math.max(0, Math.min(40, parseFloat((formData.get('borderPadding') as string) || '0'))); // 0% - 40%
 
     // Opciones de Super-Resolución (Lanczos3 Upscaling) & Claridad HD
     const upscaleFactor = parseInt((formData.get('upscaleFactor') as string) || '1', 10); // 1 | 2 | 4
@@ -155,45 +216,63 @@ export async function POST(req: NextRequest) {
 
     // Super-Resolución / Upscaling (2x, 4x) o Redimensionamiento personalizado
     if (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0)) {
-      if (cropFit === 'contain' && containBackground === 'blur' && maxWidth > 0 && maxHeight > 0) {
-        // Modo Relleno Inteligente con Fondo Desenfocado Ultra Rápido y Cinemático
-        const lowResW = Math.max(160, Math.round(maxWidth / 4));
-        const lowResH = Math.max(160, Math.round(maxHeight / 4));
+      const targetW = maxWidth > 0 ? maxWidth : (originalWidth || 1200);
+      const targetH = maxHeight > 0 ? maxHeight : (originalHeight || 628);
+      const gravity = parseGravity(cropPosition);
 
-        const bgBuffer = await sharp(inputBuffer)
+      if (cropFit === 'contain' || borderPadding > 0) {
+        // Modo Relleno / Marco con Bordes y Grosor Configurable
+        const paddingRatio = borderPadding > 0 ? Math.max(0.1, 1 - (borderPadding * 2) / 100) : 1;
+        const innerMaxW = Math.max(1, Math.round(targetW * paddingRatio));
+        const innerMaxH = Math.max(1, Math.round(targetH * paddingRatio));
+
+        const fgBuffer = await sharp(inputBuffer)
           .rotate(rotateAngle > 0 ? rotateAngle : 0)
-          .resize(lowResW, lowResH, { fit: 'cover', position: 'center' })
-          .blur(12)
-          .resize(maxWidth, maxHeight, { fit: 'cover' })
-          .modulate({ brightness: 0.65, saturation: 1.15 })
+          .flop(flipHorizontal)
+          .grayscale(applyGrayscale)
+          .resize(innerMaxW, innerMaxH, { 
+            fit: (cropFit === 'cover' && borderPadding > 0) ? 'cover' : 'inside', 
+            position: cropPosition as any,
+            kernel: sharp.kernel.lanczos3 
+          })
           .png()
           .toBuffer();
 
-        const fgBuffer = await transformPipeline
-          .resize(maxWidth, maxHeight, { fit: 'inside', kernel: sharp.kernel.lanczos3 })
+        if (containBackground === 'blur') {
+          // Fondo desenfocado cinemático ultra rápido
+          const lowResW = Math.max(160, Math.round(targetW / 4));
+          const lowResH = Math.max(160, Math.round(targetH / 4));
+
+          const bgBuffer = await sharp(inputBuffer)
+            .rotate(rotateAngle > 0 ? rotateAngle : 0)
+            .resize(lowResW, lowResH, { fit: 'cover', position: 'center' })
+            .blur(14)
+            .resize(targetW, targetH, { fit: 'cover' })
+            .modulate({ brightness: 0.65, saturation: 1.15 })
+            .png()
+            .toBuffer();
+
+          transformPipeline = sharp(bgBuffer).composite([
+            { input: fgBuffer, gravity }
+          ]);
+        } else {
+          // Fondo sólido o transparente con color hex configurable
+          const bgColor = parseHexColor(containBackground);
+          const bgBuffer = await sharp({
+            create: {
+              width: targetW,
+              height: targetH,
+              channels: 4,
+              background: bgColor,
+            }
+          })
           .png()
           .toBuffer();
 
-        transformPipeline = sharp(bgBuffer).composite([
-          { input: fgBuffer, gravity: 'center' }
-        ]);
-      } else if (cropFit === 'contain') {
-        let bgCol: { r: number; g: number; b: number; alpha: number } = { r: 9, g: 11, b: 16, alpha: 1 };
-        if (containBackground === 'black') bgCol = { r: 0, g: 0, b: 0, alpha: 1 };
-        else if (containBackground === 'white') bgCol = { r: 255, g: 255, b: 255, alpha: 1 };
-        else if (containBackground === 'transparent') bgCol = { r: 0, g: 0, b: 0, alpha: 0 };
-
-        transformPipeline = transformPipeline.resize(
-          maxWidth > 0 ? maxWidth : undefined,
-          maxHeight > 0 ? maxHeight : undefined,
-          {
-            fit: 'contain',
-            position: 'center',
-            background: bgCol,
-            withoutEnlargement: false,
-            kernel: sharp.kernel.lanczos3,
-          }
-        );
+          transformPipeline = sharp(bgBuffer).composite([
+            { input: fgBuffer, gravity }
+          ]);
+        }
       } else {
         transformPipeline = transformPipeline.resize(
           maxWidth > 0 ? maxWidth : undefined,

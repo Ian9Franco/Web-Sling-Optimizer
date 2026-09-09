@@ -41,6 +41,8 @@ interface SettingsPanelProps {
   setCropPosition: (val: CropPosition) => void;
   containBackground: ContainBackground;
   setContainBackground: (val: ContainBackground) => void;
+  borderPadding?: number;
+  setBorderPadding?: (val: number) => void;
   upscaleFactor: 1 | 2 | 4;
   setUpscaleFactor: (val: 1 | 2 | 4) => void;
   clarity: boolean;
@@ -90,6 +92,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   setCropPosition,
   containBackground,
   setContainBackground,
+  borderPadding = 0,
+  setBorderPadding,
   upscaleFactor,
   setUpscaleFactor,
   clarity,

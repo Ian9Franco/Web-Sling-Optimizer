@@ -57,16 +57,33 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
     setSliderPosition(percentage);
   }, []);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
   if (!previewImg) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="panel-border bg-[#111522] max-w-4xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 relative font-mono">
+    <div 
+      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="panel-border bg-[#111522] max-w-4xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 relative font-mono shadow-2xl">
         <button
           type="button"
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white"
-          title="Cerrar modal"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-30 p-1.5 text-slate-300 hover:text-white bg-[#090b10] hover:bg-[#1c2438] border border-[#232730] hover:border-slate-500 rounded-lg transition cursor-pointer shadow-md"
+          title="Cerrar modal (Esc)"
+          aria-label="Cerrar"
         >
           <X className="w-5 h-5" />
         </button>

@@ -90,8 +90,27 @@ export interface ImageMetadataDetails {
 }
 
 export type CropFit = 'inside' | 'cover' | 'contain';
-export type CropPosition = 'center' | 'top' | 'bottom' | 'entropy' | 'attention';
-export type ContainBackground = 'blur' | 'black' | 'white' | 'transparent';
+export type CropPosition = 
+  | 'center' 
+  | 'top' 
+  | 'bottom' 
+  | 'left' 
+  | 'right' 
+  | 'top-left'
+  | 'top-right'
+  | 'bottom-left'
+  | 'bottom-right'
+  | 'north' 
+  | 'south' 
+  | 'east' 
+  | 'west' 
+  | 'northeast' 
+  | 'northwest' 
+  | 'southeast' 
+  | 'southwest' 
+  | 'entropy' 
+  | 'attention';
+export type ContainBackground = 'blur' | 'black' | 'white' | 'transparent' | string;
 
 export interface ReprocessOverrides {
   preserveQuality?: boolean;
@@ -104,6 +123,7 @@ export interface ReprocessOverrides {
   cropFit?: CropFit;
   cropPosition?: CropPosition;
   containBackground?: ContainBackground;
+  borderPadding?: number;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
 }
