@@ -104,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               transition={{ delay: 0.2, duration: 0.3 }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-              <span>v1.5 &bull; con IA Vision</span>
+              <span>v2.0 &bull; ahora si, con IA </span>
             </motion.div>
           </div>
         </div>
