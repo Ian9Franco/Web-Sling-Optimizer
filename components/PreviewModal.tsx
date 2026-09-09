@@ -27,8 +27,8 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setPreviewImg(selectedPreview);
     if (selectedPreview) {
-      setPreviewImg(selectedPreview);
       setCurrentQuality(selectedPreview.qualityApplied || 85);
     }
   }, [selectedPreview]);
@@ -58,14 +58,15 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   }, []);
 
   useEffect(() => {
+    if (!selectedPreview) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose]);
+  }, [selectedPreview, onClose]);
 
-  if (!previewImg) return null;
+  if (!selectedPreview || !previewImg) return null;
 
   return (
     <div 
