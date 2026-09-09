@@ -1,7 +1,5 @@
-'use client';
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { X, Download, ChevronsLeftRight, Columns, SplitSquareVertical, Sliders, RotateCw } from 'lucide-react';
+import { X, Download, ChevronsLeftRight, Columns, SplitSquareVertical, Sliders, RotateCw, Sparkles, Info } from 'lucide-react';
 import { ProcessedImage } from '../types/image';
 
 interface PreviewModalProps {
@@ -10,6 +8,7 @@ interface PreviewModalProps {
   onDownloadSingle: (img: ProcessedImage) => void;
   formatBytes: (bytes: number) => string;
   onReprocessSingle?: (img: ProcessedImage, quality: number) => Promise<ProcessedImage | null>;
+  onInspectMetadata?: (img: ProcessedImage) => void;
 }
 
 export const PreviewModal: React.FC<PreviewModalProps> = ({
@@ -18,6 +17,7 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   onDownloadSingle,
   formatBytes,
   onReprocessSingle,
+  onInspectMetadata,
 }) => {
   const [sliderPosition, setSliderPosition] = useState<number>(50);
   const [viewMode, setViewMode] = useState<'slider' | 'side-by-side'>('slider');
@@ -267,22 +267,38 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 text-xs">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 bg-[#090b10] border border-[#232730] text-slate-300 rounded hover:border-slate-600 transition"
-          >
-            Cerrar
-          </button>
-          <button
-            type="button"
-            onClick={() => { onDownloadSingle(previewImg); onClose(); }}
-            className="px-4 py-2 bg-[#e62429] text-white font-bold rounded flex items-center gap-1.5 hover:bg-[#ff3b30] shadow-md shadow-[#e62429]/30 transition"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Descargar</span>
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div>
+            {onInspectMetadata && (
+              <button
+                type="button"
+                onClick={() => {
+                  onInspectMetadata(previewImg);
+                }}
+                className="px-3.5 py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:text-white rounded flex items-center gap-1.5 transition"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                <span>Inspeccionar Metadatos & IA</span>
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-[#090b10] border border-[#232730] text-slate-300 rounded hover:border-slate-600 transition"
+            >
+              Cerrar
+            </button>
+            <button
+              type="button"
+              onClick={() => { onDownloadSingle(previewImg); onClose(); }}
+              className="px-4 py-2 bg-[#e62429] text-white font-bold rounded flex items-center gap-1.5 hover:bg-[#ff3b30] shadow-md shadow-[#e62429]/30 transition"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Descargar</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

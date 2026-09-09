@@ -1,7 +1,5 @@
-'use client';
-
 import React from 'react';
-import { Crop, Eye, Download, Trash2, Code, Bot } from 'lucide-react';
+import { Crop, Eye, Download, Trash2, Code, Bot, Sparkles, Info } from 'lucide-react';
 import { ProcessedImage } from '../types/image';
 
 interface ImageTableProps {
@@ -11,6 +9,7 @@ interface ImageTableProps {
   onSelectCropImage: (img: ProcessedImage) => void;
   onSelectPreview: (img: ProcessedImage) => void;
   onSelectSrcset: (img: ProcessedImage) => void;
+  onInspectMetadata?: (img: ProcessedImage) => void;
   onDownloadSingle: (img: ProcessedImage) => void;
   onRemoveSingle: (id: string) => void;
   formatBytes: (bytes: number) => string;
@@ -25,6 +24,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
   onSelectCropImage,
   onSelectPreview,
   onSelectSrcset,
+  onInspectMetadata,
   onDownloadSingle,
   onRemoveSingle,
   formatBytes,
@@ -49,12 +49,15 @@ export const ImageTable: React.FC<ImageTableProps> = ({
             <tr key={img.id} className="hover:bg-[#181d2e] transition">
               {/* Columna Miniatura */}
               <td className="py-2 px-2 align-middle text-center w-12">
-                <div className="w-9 h-9 mx-auto rounded bg-[#0c0d10] overflow-hidden border border-[#232730]">
+                <div className="w-9 h-9 mx-auto rounded bg-[#0c0d10] overflow-hidden border border-[#232730] relative group">
                   <img 
                     src={img.base64Data || img.previewUrl} 
                     alt={img.altText || img.originalName} 
                     className="w-full h-full object-cover"
                   />
+                  {img.metadataDetails?.aiDetection?.isAiGenerated && (
+                    <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-purple-400 shadow-sm shadow-purple-400/50" title="Origen IA detectado" />
+                  )}
                 </div>
               </td>
 
@@ -91,8 +94,19 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                       title="Texto alternativo para SEO y lectores de pantalla"
                     />
                   </div>
-                  <div className="text-[9.5px] text-slate-500 font-mono truncate max-w-[220px]">
-                    Orig: <span className="text-slate-400">{img.originalName}</span>
+                  <div className="flex items-center gap-2 text-[9.5px] text-slate-500 font-mono truncate max-w-[280px]">
+                    <span className="truncate">Orig: <span className="text-slate-400">{img.originalName}</span></span>
+                    {img.metadataDetails?.aiDetection?.isAiGenerated && (
+                      <button
+                        type="button"
+                        onClick={() => onInspectMetadata && onInspectMetadata(img)}
+                        className="inline-flex items-center gap-1 text-[9px] bg-purple-500/15 border border-purple-500/30 text-purple-300 px-1.5 py-0.2 rounded hover:bg-purple-500/25 transition flex-shrink-0"
+                        title="Ver prompt y metadatos de IA"
+                      >
+                        <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                        <span>IA: {img.metadataDetails.aiDetection.generator?.split(' ')[0] || 'GenAI'}</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </td>
@@ -184,6 +198,14 @@ export const ImageTable: React.FC<ImageTableProps> = ({
               {/* Columna Acciones */}
               <td className="py-2 px-2 align-middle text-right whitespace-nowrap">
                 <div className="flex items-center justify-end gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onInspectMetadata && onInspectMetadata(img)}
+                    className="p-1 rounded bg-[#0c0d10] text-purple-400 hover:text-white hover:bg-purple-600/30 border border-[#232730] transition"
+                    title="Inspeccionar Metadatos & Origen IA"
+                  >
+                    <Info className="w-3.5 h-3.5" />
+                  </button>
                   {img.status === 'done' && (
                     <>
                       <button

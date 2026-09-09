@@ -6,13 +6,16 @@ import {
   ProcessedImage, 
   CropFit, 
   CropPosition, 
-  ReprocessOverrides 
+  ReprocessOverrides,
+  ImageMetadataDetails
 } from '../types/image';
 import { AISettings, AIInteractionState } from '../types/ai';
 import { asyncPool } from '../utils/concurrency';
 import { resolveFileNamePattern, generateAltText, slugify } from '../utils/naming';
 import { clientPreCompress } from '../utils/clientPreCompress';
 import { isSupportedImageFile, RAW_CAMERA_REGEX } from '../utils/supportedFormats';
+import { extractImageMetadata } from '../utils/metadataExtractor';
+import { useRef } from 'react';
 
 interface UseImageProcessorOptions {
   qualityMode: 'preserve' | 'manual' | 'maxKB';
@@ -86,9 +89,46 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
   const [selectedPreview, setSelectedPreview] = useState<ProcessedImage | null>(null);
   const [selectedSrcsetImage, setSelectedSrcsetImage] = useState<ProcessedImage | null>(null);
   const [selectedCropImage, setSelectedCropImage] = useState<ProcessedImage | null>(null);
+  const [selectedMetadataImage, setSelectedMetadataImage] = useState<ProcessedImage | null>(null);
+  const [isLoadingMetadata, setIsLoadingMetadata] = useState<boolean>(false);
   const [analyzingId, setAnalyzingId] = useState<string | null>(null);
   const [isAnalyzingAI, setIsAnalyzingAI] = useState<boolean>(false);
   const [aiInteraction, setAiInteraction] = useState<AIInteractionState | null>(null);
+  const originalFilesRef = useRef<Map<string, File>>(new Map());
+
+  const inspectMetadata = async (img: ProcessedImage): Promise<ImageMetadataDetails | null> => {
+    setSelectedMetadataImage(img);
+    if (img.metadataDetails) {
+      return img.metadataDetails;
+    }
+
+    setIsLoadingMetadata(true);
+    try {
+      const originalFile = originalFilesRef.current.get(img.id);
+      let details: ImageMetadataDetails;
+
+      if (originalFile) {
+        details = await extractImageMetadata(originalFile, originalFile.name, originalFile.size);
+      } else if (img.base64Data) {
+        const res = await fetch(img.base64Data);
+        const blob = await res.blob();
+        details = await extractImageMetadata(blob, img.originalName, img.originalSizeBytes);
+      } else {
+        const res = await fetch(img.previewUrl);
+        const blob = await res.blob();
+        details = await extractImageMetadata(blob, img.originalName, img.originalSizeBytes);
+      }
+
+      setImages(prev => prev.map(item => item.id === img.id ? { ...item, metadataDetails: details } : item));
+      setSelectedMetadataImage(prev => prev && prev.id === img.id ? { ...prev, metadataDetails: details } : prev);
+      return details;
+    } catch (err) {
+      console.error('Error inspeccionando metadatos:', err);
+      return null;
+    } finally {
+      setIsLoadingMetadata(false);
+    }
+  };
 
   const handleFiles = async (filesList: FileList | File[]) => {
     const validFiles = Array.from(filesList).filter(file => isSupportedImageFile(file));
@@ -114,6 +154,16 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       previewUrl: URL.createObjectURL(file),
       status: 'pending'
     }));
+
+    validFiles.forEach((file, i) => {
+      originalFilesRef.current.set(newEntries[i].id, file);
+      // Extraer metadatos de forma no bloqueante en background
+      extractImageMetadata(file, file.name, file.size)
+        .then((meta) => {
+          setImages(prev => prev.map(img => img.id === newEntries[i].id ? { ...img, metadataDetails: meta } : img));
+        })
+        .catch((e) => console.warn('Error en extracción de metadatos:', e));
+    });
 
     setImages(prev => [...newEntries, ...prev]);
 
@@ -778,6 +828,10 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     setSelectedSrcsetImage,
     selectedCropImage,
     setSelectedCropImage,
+    selectedMetadataImage,
+    setSelectedMetadataImage,
+    isLoadingMetadata,
+    inspectMetadata,
     analyzingId,
     isAnalyzingAI,
     aiInteraction,

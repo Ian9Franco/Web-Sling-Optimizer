@@ -24,6 +24,7 @@ interface VisualizationPanelProps {
   onSelectCropImage: (img: ProcessedImage) => void;
   onSelectPreview: (img: ProcessedImage) => void;
   onSelectSrcset: (img: ProcessedImage) => void;
+  onInspectMetadata?: (img: ProcessedImage) => void;
   onDownloadSingle: (img: ProcessedImage) => void;
   onRemoveSingle: (id: string) => void;
   formatBytes: (bytes: number) => string;
@@ -50,6 +51,7 @@ export const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
   onSelectCropImage,
   onSelectPreview,
   onSelectSrcset,
+  onInspectMetadata,
   onDownloadSingle,
   onRemoveSingle,
   formatBytes,
@@ -104,6 +106,7 @@ export const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
               onSelectCropImage={onSelectCropImage}
               onSelectPreview={onSelectPreview}
               onSelectSrcset={onSelectSrcset}
+              onInspectMetadata={onInspectMetadata}
               onDownloadSingle={onDownloadSingle}
               onRemoveSingle={onRemoveSingle}
               formatBytes={formatBytes}
@@ -116,6 +119,7 @@ export const VisualizationPanel: React.FC<VisualizationPanelProps> = ({
               onUpdateOutputFileName={onUpdateOutputFileName}
               onUpdateAltText={onUpdateAltText}
               onSelectSrcset={onSelectSrcset}
+              onInspectMetadata={onInspectMetadata}
               onDownloadSingle={onDownloadSingle}
               onRemoveSingle={onRemoveSingle}
               formatBytes={formatBytes}

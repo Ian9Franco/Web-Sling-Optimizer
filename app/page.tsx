@@ -9,6 +9,7 @@ import { CropModal } from '../components/CropModal';
 import { FaviconModal } from '../components/FaviconModal';
 import { PreviewModal } from '../components/PreviewModal';
 import { SrcsetModal } from '../components/SrcsetModal';
+import { MetadataModal } from '../components/MetadataModal';
 import { AIConfigModal } from '../components/AIConfigModal';
 import { AIInteractionPreview } from '../components/AIInteractionPreview';
 import { LiquidGridBackground } from '../components/LiquidGridBackground';
@@ -62,6 +63,10 @@ export default function HomePage() {
     setSelectedSrcsetImage,
     selectedCropImage,
     setSelectedCropImage,
+    selectedMetadataImage,
+    setSelectedMetadataImage,
+    isLoadingMetadata,
+    inspectMetadata,
     analyzingId,
     isAnalyzingAI,
     aiInteraction,
@@ -270,6 +275,7 @@ export default function HomePage() {
             onSelectCropImage={setSelectedCropImage}
             onSelectPreview={setSelectedPreview}
             onSelectSrcset={setSelectedSrcsetImage}
+            onInspectMetadata={inspectMetadata}
             onDownloadSingle={downloadSingle}
             onRemoveSingle={removeSingleImage}
             formatBytes={formatBytes}
@@ -289,6 +295,15 @@ export default function HomePage() {
 
       {/* Footer Copyright */}
       <Footer />
+
+      {/* Modal Inspector de Metadatos & Procedencia IA */}
+      <MetadataModal
+        image={selectedMetadataImage}
+        metadata={selectedMetadataImage?.metadataDetails || null}
+        isLoading={isLoadingMetadata}
+        onClose={() => setSelectedMetadataImage(null)}
+        formatBytes={formatBytes}
+      />
 
       {/* Modal Configuración de IA Multimodal */}
       <AIConfigModal
@@ -325,6 +340,7 @@ export default function HomePage() {
         onDownloadSingle={downloadSingle}
         formatBytes={formatBytes}
         onReprocessSingle={handleReprocessSingle}
+        onInspectMetadata={inspectMetadata}
       />
 
       {/* Modal Inspector de Recorte y Formato Ads */}

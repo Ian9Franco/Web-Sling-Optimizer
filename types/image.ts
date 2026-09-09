@@ -19,6 +19,74 @@ export interface ProcessedImage {
   errorMessage?: string;
   upscaleApplied?: number;
   clarityApplied?: boolean;
+  metadataDetails?: ImageMetadataDetails;
+}
+
+export interface AiDetectionResult {
+  isAiGenerated: boolean;
+  generator?: string; // 'Stable Diffusion' | 'Midjourney' | 'DALL-E 3' | 'ComfyUI' | 'Adobe Firefly' | 'NovelAI' | 'Synthetic Media (IPTC/C2PA)' | 'Unknown AI'
+  confidence: 'high' | 'medium' | 'low' | 'none';
+  prompt?: string;
+  negativePrompt?: string;
+  model?: string;
+  seed?: string | number;
+  steps?: number;
+  sampler?: string;
+  cfgScale?: number;
+  workflowJson?: string;
+  rawParams?: string;
+  additionalDetails?: Record<string, any>;
+}
+
+export interface ExifCameraDetails {
+  make?: string;
+  model?: string;
+  lens?: string;
+  software?: string;
+  iso?: number;
+  fNumber?: number;
+  exposureTime?: string | number;
+  focalLength?: number;
+  dateTimeOriginal?: string;
+  gpsLatitude?: number;
+  gpsLongitude?: number;
+  whiteBalance?: string;
+  flash?: string;
+}
+
+export interface IptcRightsDetails {
+  title?: string;
+  creator?: string;
+  credit?: string;
+  copyright?: string;
+  caption?: string;
+  keywords?: string[];
+  digitalSourceType?: string;
+}
+
+export interface ColorAndTechnicalDetails {
+  colorSpace?: string;
+  profileDescription?: string;
+  profileCopyright?: string;
+  hasIccProfile?: boolean;
+  bitDepth?: number;
+  channels?: number;
+  densityDpi?: number;
+  isProgressive?: boolean;
+  format?: string;
+  width?: number;
+  height?: number;
+  aspectRatio?: string;
+  fileSizeBytes?: number;
+}
+
+export interface ImageMetadataDetails {
+  hasMetadata: boolean;
+  aiDetection: AiDetectionResult;
+  camera?: ExifCameraDetails;
+  rights?: IptcRightsDetails;
+  technical: ColorAndTechnicalDetails;
+  rawTags: Record<string, any>;
 }
 
 export type CropFit = 'inside' | 'cover';

@@ -62,7 +62,7 @@ export const Footer: React.FC = () => {
             v2.0 PRO
           </span>
           <p className="text-[11px] text-slate-300">
-            Desarrollado por <span className="text-white font-bold tracking-wide">Ian Franco</span> &bull; Web-Sling Optimizer Suite
+            Desarrollado por <span className="text-white font-bold tracking-wide">Ian Pontorno</span> &bull; Web-Sling Optimizer Suite
           </p>
         </div>
 
