@@ -109,15 +109,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         </div>
 
-        {/* Acciones & Status */}
+        {/* Acciones & Status con Motion Animations */}
         <div className="flex items-center gap-2 sm:gap-3 text-xs font-mono">
           
           {/* Botón IA Vision SEO */}
           <div className="flex items-center gap-1">
-            <button
+            <motion.button
               type="button"
               onClick={onOpenAIModal}
-              className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all duration-200 border font-medium ${
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+              className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors border font-medium ${
                 isAIConfigured 
                   ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/40 shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.3)]' 
                   : 'bg-[#101422] border-[#22293a] text-slate-300 hover:border-[#2563eb] hover:text-white hover:bg-[#141b30]'
@@ -134,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <span className="text-[10px] text-slate-500 font-normal hidden sm:inline">(Activar)</span>
               )}
-            </button>
+            </motion.button>
             <InfoTooltip
               title="Módulo de IA Vision SEO"
               description="Conecta tu API Key de Google Gemini o OpenAI para que un modelo de visión analice visualmente cada imagen y genere nombres de archivo semánticos y textos ALT optimizados para accesibilidad y Google Images."
@@ -144,15 +147,18 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Botón Favicon Generator */}
           <div className="flex items-center gap-1">
-            <button
+            <motion.button
               type="button"
               onClick={onOpenFaviconModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] hover:from-[#2563eb] hover:to-[#3b82f6] text-white font-medium transition-all duration-200 shadow-[0_0_15px_rgba(37,99,235,0.25)] hover:shadow-[0_0_22px_rgba(37,99,235,0.45)] border border-blue-400/20 active:scale-95"
+              whileHover={{ scale: 1.05, y: -1 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] hover:from-[#2563eb] hover:to-[#3b82f6] text-white font-medium shadow-[0_0_15px_rgba(37,99,235,0.25)] hover:shadow-[0_0_22px_rgba(37,99,235,0.45)] border border-blue-400/20"
             >
               <Package className="w-4 h-4 text-blue-200" />
               <span className="hidden sm:inline">Favicon Generator</span>
               <span className="sm:hidden">Favicon</span>
-            </button>
+            </motion.button>
             <InfoTooltip
               title="Generador de Favicon Multi-plataforma"
               description="Convierte cualquier imagen o logo en un paquete completo de favicons: favicon.ico multi-resolución (16x16, 32x32, 48x48), PNGs para Apple Touch Icon, Android Chrome PWA (192x192, 512x512) y el archivo manifest.json listo para copiar."
@@ -162,9 +168,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Badge de Ahorro en Vivo */}
           {hasImages && (
-            <div className="animate-in fade-in zoom-in-95 duration-200">
+            <motion.div 
+              className="cursor-default"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+            >
               {totalSavedBytes >= 0 ? (
-                <div className="flex items-center gap-1.5 text-emerald-300 font-bold bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                <div className="flex items-center gap-1.5 text-emerald-300 font-bold bg-emerald-950/40 border border-emerald-500/30 px-3 py-1.5 rounded-lg shadow-[0_0_15px_rgba(16,185,129,0.15)] hover:border-emerald-400/60 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-colors">
                   <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400/30 animate-pulse" />
                   <span className="hidden md:inline text-slate-400 font-normal">Ahorro:</span>
                   <span>{formatBytes(totalSavedBytes)}</span>
@@ -173,12 +186,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 text-amber-300 font-bold bg-amber-950/40 border border-amber-500/30 px-3 py-1.5 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.15)]">
+                <div className="flex items-center gap-1.5 text-amber-300 font-bold bg-amber-950/40 border border-amber-500/30 px-3 py-1.5 rounded-lg shadow-[0_0_15px_rgba(245,158,11,0.15)] hover:border-amber-400/60 transition-colors">
                   <span className="text-slate-400 font-normal hidden md:inline">Diff:</span>
                   <span>+{formatBytes(Math.abs(totalSavedBytes))}</span>
                 </div>
               )}
-            </div>
+            </motion.div>
           )}
         </div>
       </div>

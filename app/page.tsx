@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CropFit, CropPosition } from '../types/image';
+import { CropFit, CropPosition, ContainBackground } from '../types/image';
 import { Navbar } from '../components/Navbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { VisualizationPanel } from '../components/VisualizationPanel';
@@ -34,6 +34,7 @@ export default function HomePage() {
   const [customHeight, setCustomHeight] = useState<string>('');
   const [cropFit, setCropFit] = useState<CropFit>('inside');
   const [cropPosition, setCropPosition] = useState<CropPosition>('center');
+  const [containBackground, setContainBackground] = useState<ContainBackground>('blur');
   const [upscaleFactor, setUpscaleFactor] = useState<1 | 2 | 4>(1);
   const [clarity, setClarity] = useState<boolean>(false);
 
@@ -104,6 +105,7 @@ export default function HomePage() {
     customNamePattern,
     cropFit,
     cropPosition,
+    containBackground,
     upscaleFactor,
     clarity,
   });
@@ -228,6 +230,8 @@ export default function HomePage() {
               setCropFit={setCropFit}
               cropPosition={cropPosition}
               setCropPosition={setCropPosition}
+              containBackground={containBackground}
+              setContainBackground={setContainBackground}
               upscaleFactor={upscaleFactor}
               setUpscaleFactor={setUpscaleFactor}
               clarity={clarity}
@@ -351,9 +355,12 @@ export default function HomePage() {
         setCustomWidth={setCustomWidth}
         customHeight={customHeight}
         setCustomHeight={setCustomHeight}
+        cropFit={cropFit}
         setCropFit={setCropFit}
         cropPosition={cropPosition}
         setCropPosition={setCropPosition}
+        containBackground={containBackground}
+        setContainBackground={setContainBackground}
         onApplyCrop={handleApplyCrop}
       />
 

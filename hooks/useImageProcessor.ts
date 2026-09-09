@@ -6,6 +6,7 @@ import {
   ProcessedImage, 
   CropFit, 
   CropPosition, 
+  ContainBackground,
   ReprocessOverrides,
   ImageMetadataDetails
 } from '../types/image';
@@ -33,6 +34,7 @@ interface UseImageProcessorOptions {
   customNamePattern: string;
   cropFit: CropFit;
   cropPosition: CropPosition;
+  containBackground?: ContainBackground;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
 }
@@ -80,6 +82,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     customNamePattern,
     cropFit,
     cropPosition,
+    containBackground = 'blur',
     upscaleFactor = 1,
     clarity = false,
   } = options;
@@ -243,6 +246,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formData.append('index', (i + 1).toString());
         formData.append('cropFit', cropFit);
         formData.append('cropPosition', cropPosition);
+        formData.append('containBackground', containBackground);
         formData.append('upscaleFactor', upscaleFactor.toString());
         formData.append('clarity', clarity ? 'true' : 'false');
 
@@ -299,6 +303,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     const targetFormat = overrides?.format ?? format;
     const targetFit = overrides?.cropFit ?? cropFit;
     const targetPosition = overrides?.cropPosition ?? cropPosition;
+    const targetContainBg = overrides?.containBackground ?? containBackground;
     const targetUpscale = overrides?.upscaleFactor ?? upscaleFactor;
     const targetClarity = overrides?.clarity ?? clarity;
 
@@ -375,6 +380,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         formData.append('index', (idx + 1).toString());
         formData.append('cropFit', targetFit);
         formData.append('cropPosition', targetPosition);
+        formData.append('containBackground', targetContainBg);
         formData.append('upscaleFactor', targetUpscale.toString());
         formData.append('clarity', targetClarity ? 'true' : 'false');
 
@@ -530,8 +536,9 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       formData.append('grayscale', grayscale ? 'true' : 'false');
       formData.append('stripExif', stripExif ? 'true' : 'false');
       formData.append('watermarkText', watermarkText);
-      formData.append('cropFit', 'cover');
+      formData.append('cropFit', cropFit);
       formData.append('cropPosition', cropPosition);
+      formData.append('containBackground', containBackground);
       formData.append('upscaleFactor', upscaleFactor.toString());
       formData.append('clarity', clarity ? 'true' : 'false');
 
@@ -588,6 +595,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       formData.append('watermarkText', watermarkText);
       formData.append('cropFit', cropFit);
       formData.append('cropPosition', cropPosition);
+      formData.append('containBackground', containBackground);
       formData.append('upscaleFactor', upscaleFactor.toString());
       formData.append('clarity', clarity ? 'true' : 'false');
 

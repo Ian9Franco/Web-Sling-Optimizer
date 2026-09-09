@@ -16,7 +16,7 @@ import {
   Wand2,
   Sparkles
 } from 'lucide-react';
-import { CropFit, CropPosition, ReprocessOverrides, CustomPreset, ProcessedImage } from '../types/image';
+import { CropFit, CropPosition, ContainBackground, ReprocessOverrides, CustomPreset, ProcessedImage } from '../types/image';
 import { resolveFileNamePattern } from '../utils/naming';
 import { InfoTooltip } from './InfoTooltip';
 
@@ -39,6 +39,8 @@ interface SettingsPanelProps {
   setCropFit: (val: CropFit) => void;
   cropPosition: CropPosition;
   setCropPosition: (val: CropPosition) => void;
+  containBackground: ContainBackground;
+  setContainBackground: (val: ContainBackground) => void;
   upscaleFactor: 1 | 2 | 4;
   setUpscaleFactor: (val: 1 | 2 | 4) => void;
   clarity: boolean;
@@ -86,6 +88,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   setCropFit,
   cropPosition,
   setCropPosition,
+  containBackground,
+  setContainBackground,
   upscaleFactor,
   setUpscaleFactor,
   clarity,
@@ -175,6 +179,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setCustomHeight(preset.customHeight);
     setCropFit(preset.cropFit);
     setCropPosition(preset.cropPosition);
+    if (preset.containBackground) setContainBackground(preset.containBackground);
     if (preset.upscaleFactor) setUpscaleFactor(preset.upscaleFactor);
     if (preset.clarity !== undefined) setClarity(preset.clarity);
     reprocessBatch({
@@ -185,6 +190,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       customHeight: preset.customHeight,
       cropFit: preset.cropFit,
       cropPosition: preset.cropPosition,
+      containBackground: preset.containBackground,
       upscaleFactor: preset.upscaleFactor,
       clarity: preset.clarity,
     });
@@ -564,7 +570,8 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                     { label: 'Google Ads (1200x628)', w: '1200', h: '628', fit: 'cover' },
                     { label: 'Banner (1920x1080)', w: '1920', h: '1080', fit: 'cover' },
                     { label: 'Cuadrado (1080x1080)', w: '1080', h: '1080', fit: 'cover' },
-                    { label: 'Historia (1080x1920)', w: '1080', h: '1920', fit: 'cover' },
+                    { label: 'Historia Blur (1080x1920)', w: '1080', h: '1920', fit: 'contain', bg: 'blur' as const },
+                    { label: 'Historia Recorte (1080x1920)', w: '1080', h: '1920', fit: 'cover' },
                     { label: 'Retrato (1080x1350)', w: '1080', h: '1350', fit: 'cover' },
                     { label: 'Libre HD (1280)', w: '1280', h: '', fit: 'inside' },
                   ].map((preset, idx) => (
@@ -575,8 +582,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                         setCustomWidth(preset.w); 
                         setCustomHeight(preset.h); 
                         setCropFit(preset.fit as CropFit);
+                        if (preset.bg) setContainBackground(preset.bg);
                         setResizeMode('custom');
-                        reprocessBatch({ customWidth: preset.w, customHeight: preset.h, cropFit: preset.fit as CropFit, resizeMode: 'custom' });
+                        reprocessBatch({ 
+                          customWidth: preset.w, 
+                          customHeight: preset.h, 
+                          cropFit: preset.fit as CropFit, 
+                          containBackground: preset.bg,
+                          resizeMode: 'custom' 
+                        });
                       }}
                       className="text-[10px] font-mono bg-[#14161b] hover:border-[#2563eb] border border-[#232730] text-slate-300 px-2 py-1 rounded transition"
                     >
@@ -586,40 +600,89 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 </div>
               </div>
 
-              {/* Modo de Ajuste: Escalar vs Recortar */}
+              {/* Modo de Ajuste: Escalar vs Recortar vs Rellenar */}
               <div className="space-y-2 pt-2 border-t border-[#232730]">
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[10px] font-mono text-slate-400 block font-bold">Modo de Recorte (Sin Estirar):</label>
+                  <label className="text-[10px] font-mono text-slate-400 block font-bold">Modo de Ajuste (Sin Deformar):</label>
                   <InfoTooltip
                     title="Modos de Ajuste"
-                    description="'Sin Cortar (Escalar)' reduce la imagen encajándola proporcionalmente. 'Recortar Formato Exacto' llena las dimensiones exactas recortando los bordes sobrantes."
+                    description="'Sin Cortar (Escalar)' reduce la imagen encajándola proporcionalmente. 'Recortar Formato Exacto' llena las medidas cortando bordes. 'Rellenar Bordes' adapta formatos (ej. fotos horizontales a Historias verticales 9:16) agregando bordes o desenfoque sin perder nada de la imagen."
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-1.5 font-mono text-[11px]">
+                <div className="grid grid-cols-3 gap-1 font-mono text-[10px]">
                   <button
                     type="button"
-                    onClick={() => setCropFit('inside')}
-                    className={`py-1.5 px-2 rounded border text-center transition ${
+                    onClick={() => { setCropFit('inside'); reprocessBatch({ cropFit: 'inside' }); }}
+                    className={`py-1.5 px-1 rounded border text-center transition ${
                       cropFit === 'inside'
-                        ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold'
-                        : 'bg-[#14161b] border-[#232730] text-slate-400'
+                        ? 'bg-[#2563eb] border-[#2563eb] text-white font-bold shadow-sm shadow-[#2563eb]/30'
+                        : 'bg-[#14161b] border-[#232730] text-slate-400 hover:text-white'
                     }`}
                   >
-                    Sin Cortar (Escalar)
+                    Sin Cortar
                   </button>
                   <button
                     type="button"
-                    onClick={() => setCropFit('cover')}
-                    className={`py-1.5 px-2 rounded border text-center transition ${
+                    onClick={() => { setCropFit('cover'); reprocessBatch({ cropFit: 'cover' }); }}
+                    className={`py-1.5 px-1 rounded border text-center transition ${
                       cropFit === 'cover'
-                        ? 'bg-[#e62429] border-[#e62429] text-white font-bold'
-                        : 'bg-[#14161b] border-[#232730] text-slate-400'
+                        ? 'bg-[#e62429] border-[#e62429] text-white font-bold shadow-sm shadow-[#e62429]/30'
+                        : 'bg-[#14161b] border-[#232730] text-slate-400 hover:text-white'
                     }`}
                   >
-                    Recortar Formato Exacto
+                    Recorte Exacto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setCropFit('contain'); reprocessBatch({ cropFit: 'contain' }); }}
+                    className={`py-1.5 px-1 rounded border text-center transition ${
+                      cropFit === 'contain'
+                        ? 'bg-purple-600 border-purple-500 text-white font-bold shadow-sm shadow-purple-600/30'
+                        : 'bg-[#14161b] border-[#232730] text-slate-400 hover:text-white'
+                    }`}
+                    title="Mantiene toda la imagen y rellena los bordes faltantes con desenfoque o color"
+                  >
+                    Rellenar Bordes
                   </button>
                 </div>
               </div>
+
+              {/* Opciones de Fondo para Modo Rellenar (Contain / Letterbox) */}
+              {cropFit === 'contain' && (
+                <div className="space-y-1.5 pt-2 border-t border-[#232730] bg-[#101424]/60 p-2 rounded-lg border border-purple-500/20">
+                  <div className="flex items-center gap-1.5">
+                    <label className="text-[10px] font-mono text-purple-300 block font-bold">Fondo de Relleno (Letterbox):</label>
+                    <InfoTooltip
+                      title="Fondo de Relleno"
+                      description="'Desenfoque Pro' crea un fondo ambiental con la misma imagen desenfocada (estilo Instagram/TikTok). También puedes elegir fondos limpios en Negro, Blanco o Transparente."
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 gap-1 font-mono text-[9.5px]">
+                    {[
+                      { id: 'blur' as const, label: '🌌 Blur Pro' },
+                      { id: 'black' as const, label: '⚫ Negro' },
+                      { id: 'white' as const, label: '⚪ Blanco' },
+                      { id: 'transparent' as const, label: '🔳 Alpha' },
+                    ].map((bg) => (
+                      <button
+                        key={bg.id}
+                        type="button"
+                        onClick={() => {
+                          setContainBackground(bg.id);
+                          reprocessBatch({ cropFit: 'contain', containBackground: bg.id });
+                        }}
+                        className={`py-1 px-1 rounded border text-center transition ${
+                          containBackground === bg.id
+                            ? 'bg-purple-600 border-purple-400 text-white font-bold'
+                            : 'bg-[#0c0d10] border-[#232730] text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {bg.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Enfoque / Zona de Recorte */}
               {cropFit === 'cover' && (
@@ -633,7 +696,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   </div>
                   <select
                     value={cropPosition}
-                    onChange={(e) => setCropPosition(e.target.value as CropPosition)}
+                    onChange={(e) => {
+                      const pos = e.target.value as CropPosition;
+                      setCropPosition(pos);
+                      reprocessBatch({ cropFit: 'cover', cropPosition: pos });
+                    }}
                     className="w-full bg-[#14161b] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded p-2 text-white outline-none"
                   >
                     <option value="center">Centro (Default)</option>

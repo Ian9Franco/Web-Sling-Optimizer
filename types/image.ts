@@ -89,8 +89,9 @@ export interface ImageMetadataDetails {
   rawTags: Record<string, any>;
 }
 
-export type CropFit = 'inside' | 'cover';
+export type CropFit = 'inside' | 'cover' | 'contain';
 export type CropPosition = 'center' | 'top' | 'bottom' | 'entropy' | 'attention';
+export type ContainBackground = 'blur' | 'black' | 'white' | 'transparent';
 
 export interface ReprocessOverrides {
   preserveQuality?: boolean;
@@ -102,6 +103,7 @@ export interface ReprocessOverrides {
   format?: string;
   cropFit?: CropFit;
   cropPosition?: CropPosition;
+  containBackground?: ContainBackground;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
 }
@@ -118,6 +120,7 @@ export interface CustomPreset {
   customHeight: string;
   cropFit: CropFit;
   cropPosition: CropPosition;
+  containBackground?: ContainBackground;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
 }

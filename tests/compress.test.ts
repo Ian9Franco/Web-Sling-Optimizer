@@ -185,6 +185,48 @@ describe('API /api/compress', () => {
     expect(jsonGif.formatApplied).toBe('GIF');
     expect(jsonGif.outputFileName).toContain('.gif');
   });
+
+  it('debe soportar modo contain (relleno con bordes / blur background) para historias verticales sin perder contenido', async () => {
+    const imagePath = path.join(process.cwd(), 'public', 'websling_logo.png');
+    const imageBuffer = fs.readFileSync(imagePath);
+    const blob = new Blob([imageBuffer], { type: 'image/png' });
+
+    // Test Contain con Desenfoque Pro (Blur)
+    const formBlur = new FormData();
+    formBlur.append('file', blob, 'horizontal.png');
+    formBlur.append('resizeMode', 'custom');
+    formBlur.append('maxWidth', '1080');
+    formBlur.append('maxHeight', '1920');
+    formBlur.append('cropFit', 'contain');
+    formBlur.append('containBackground', 'blur');
+    formBlur.append('format', 'webp');
+
+    const reqBlur = new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: formBlur });
+    const resBlur = await compressHandler(reqBlur);
+    expect(resBlur.status).toBe(200);
+    const jsonBlur = await resBlur.json();
+    expect(jsonBlur.success).toBe(true);
+    expect(jsonBlur.finalWidth).toBe(1080);
+    expect(jsonBlur.finalHeight).toBe(1920);
+
+    // Test Contain con Fondo Negro
+    const formBlack = new FormData();
+    formBlack.append('file', blob, 'horizontal.png');
+    formBlack.append('resizeMode', 'custom');
+    formBlack.append('maxWidth', '1080');
+    formBlack.append('maxHeight', '1920');
+    formBlack.append('cropFit', 'contain');
+    formBlack.append('containBackground', 'black');
+    formBlack.append('format', 'jpg');
+
+    const reqBlack = new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: formBlack });
+    const resBlack = await compressHandler(reqBlack);
+    expect(resBlack.status).toBe(200);
+    const jsonBlack = await resBlack.json();
+    expect(jsonBlack.success).toBe(true);
+    expect(jsonBlack.finalWidth).toBe(1080);
+    expect(jsonBlack.finalHeight).toBe(1920);
+  });
 });
 
 describe('API /api/favicon', () => {

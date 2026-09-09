@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     // Opciones avanzadas de Recorte y Aspect Ratio
     const cropFit = (formData.get('cropFit') as string) || 'inside'; // 'inside' | 'cover' | 'contain'
     const cropPosition = (formData.get('cropPosition') as string) || 'center'; // 'center' | 'top' | 'bottom' | 'left' | 'right' | 'entropy' | 'attention'
+    const containBackground = (formData.get('containBackground') as string) || 'blur'; // 'blur' | 'black' | 'white' | 'transparent'
 
     // Opciones de Super-Resolución (Lanczos3 Upscaling) & Claridad HD
     const upscaleFactor = parseInt((formData.get('upscaleFactor') as string) || '1', 10); // 1 | 2 | 4
@@ -154,16 +155,57 @@ export async function POST(req: NextRequest) {
 
     // Super-Resolución / Upscaling (2x, 4x) o Redimensionamiento personalizado
     if (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0)) {
-      transformPipeline = transformPipeline.resize(
-        maxWidth > 0 ? maxWidth : undefined,
-        maxHeight > 0 ? maxHeight : undefined,
-        {
-          fit: (cropFit === 'cover' ? 'cover' : cropFit === 'contain' ? 'contain' : 'inside') as 'cover' | 'contain' | 'inside',
-          position: cropPosition as any,
-          withoutEnlargement: cropFit === 'cover' ? false : true,
-          kernel: sharp.kernel.lanczos3,
-        }
-      );
+      if (cropFit === 'contain' && containBackground === 'blur' && maxWidth > 0 && maxHeight > 0) {
+        // Modo Relleno Inteligente con Fondo Desenfocado Ultra Rápido y Cinemático
+        const lowResW = Math.max(160, Math.round(maxWidth / 4));
+        const lowResH = Math.max(160, Math.round(maxHeight / 4));
+
+        const bgBuffer = await sharp(inputBuffer)
+          .rotate(rotateAngle > 0 ? rotateAngle : 0)
+          .resize(lowResW, lowResH, { fit: 'cover', position: 'center' })
+          .blur(12)
+          .resize(maxWidth, maxHeight, { fit: 'cover' })
+          .modulate({ brightness: 0.65, saturation: 1.15 })
+          .png()
+          .toBuffer();
+
+        const fgBuffer = await transformPipeline
+          .resize(maxWidth, maxHeight, { fit: 'inside', kernel: sharp.kernel.lanczos3 })
+          .png()
+          .toBuffer();
+
+        transformPipeline = sharp(bgBuffer).composite([
+          { input: fgBuffer, gravity: 'center' }
+        ]);
+      } else if (cropFit === 'contain') {
+        let bgCol: { r: number; g: number; b: number; alpha: number } = { r: 9, g: 11, b: 16, alpha: 1 };
+        if (containBackground === 'black') bgCol = { r: 0, g: 0, b: 0, alpha: 1 };
+        else if (containBackground === 'white') bgCol = { r: 255, g: 255, b: 255, alpha: 1 };
+        else if (containBackground === 'transparent') bgCol = { r: 0, g: 0, b: 0, alpha: 0 };
+
+        transformPipeline = transformPipeline.resize(
+          maxWidth > 0 ? maxWidth : undefined,
+          maxHeight > 0 ? maxHeight : undefined,
+          {
+            fit: 'contain',
+            position: 'center',
+            background: bgCol,
+            withoutEnlargement: false,
+            kernel: sharp.kernel.lanczos3,
+          }
+        );
+      } else {
+        transformPipeline = transformPipeline.resize(
+          maxWidth > 0 ? maxWidth : undefined,
+          maxHeight > 0 ? maxHeight : undefined,
+          {
+            fit: cropFit === 'cover' ? 'cover' : 'inside',
+            position: cropPosition as any,
+            withoutEnlargement: cropFit === 'cover' ? false : true,
+            kernel: sharp.kernel.lanczos3,
+          }
+        );
+      }
     } else if (upscaleFactor > 1 && originalWidth > 0 && originalHeight > 0) {
       // Upscaling con interpolación Lanczos3 de alta fidelidad
       const targetUpscaleW = Math.round(originalWidth * upscaleFactor);
