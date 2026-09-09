@@ -171,17 +171,25 @@ export const AIConfigModal: React.FC<AIConfigModalProps> = ({
 
           {/* Aviso sobre ChatGPT Plus */}
           {provider === 'openai' && (
-            <div className="bg-amber-500/10 border border-amber-500/20 p-2 rounded text-[10px] text-amber-300 flex items-start gap-1.5">
+            <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded text-[11px] text-amber-300 flex items-start gap-2">
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
               <span>
-                <strong>Nota sobre suscripción Plus:</strong> La suscripción mensual a ChatGPT Plus no incluye uso de la API. La plataforma para desarrolladores de OpenAI requiere recargar saldo de créditos para funcionar.
+                <strong>Nota sobre suscripción Plus:</strong> La suscripción a ChatGPT Plus no incluye uso de la API. La plataforma para desarrolladores de OpenAI requiere saldo de créditos.
               </span>
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Se guarda únicamente en el navegador (localStorage). Privacidad total.</span>
+          {/* Garantía de Seguridad & Privacidad Total */}
+          <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-lg p-3 space-y-1.5 text-[11px] text-emerald-200">
+            <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>Privacidad &amp; Seguridad Garantizada (Zero-Server Storage)</span>
+            </div>
+            <p className="text-emerald-300/80 leading-relaxed text-[10px]">
+              &bull; <strong>Sin servidores intermediarios:</strong> Tu clave de API <u>NUNCA</u> se almacena, registra ni envía a ningún servidor o base de datos de WebSling.<br />
+              &bull; <strong>100% Local:</strong> Se guarda únicamente en el <code className="bg-emerald-900/50 px-1 py-0.5 rounded text-emerald-300 font-mono">localStorage</code> de tu navegador.<br />
+              &bull; <strong>Conexión Directa:</strong> Las peticiones de visión artificial van directamente desde tu navegador hacia la API oficial ({provider === 'gemini' ? 'Google AI Studio' : 'OpenAI'}).
+            </p>
           </div>
         </div>
 

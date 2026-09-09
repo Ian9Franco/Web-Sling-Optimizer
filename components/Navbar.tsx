@@ -140,6 +140,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <InfoTooltip
               title="Módulo de IA Vision SEO"
               description="Conecta tu API Key de Google Gemini o OpenAI para que un modelo de visión analice visualmente cada imagen y genere nombres de archivo semánticos y textos ALT optimizados para accesibilidad y Google Images."
+              tip="Seguridad Garantizada: Tu API Key se guarda 100% de forma local en tu navegador (localStorage) y NUNCA se almacena ni envía a ningún servidor de WebSling."
               placement="bottom"
             />
           </div>
