@@ -1,0 +1,146 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Web-Sling Optimizer API",
+    "version": "2.0.0",
+    "description": "Serverless high-performance image optimization, Lanczos3 super-resolution, RAW parsing, metadata inspection, and favicon package generation."
+  },
+  "servers": [
+    {
+      "url": "https://web-sling-optimizer.vercel.app"
+    }
+  ],
+  "paths": {
+    "/api/compress": {
+      "post": {
+        "summary": "Compress, resize, upscale, or convert image",
+        "description": "Processes an uploaded image with Sharp, applying format conversion, quality adjustment, Lanczos3 scaling, contain padding (blur/solid), and EXIF stripping.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (JPG, PNG, WebP, AVIF, RAW, HEIC, TIFF, GIF)"
+                  },
+                  "qualityMode": {
+                    "type": "string",
+                    "enum": ["preserve", "manual", "maxKB"],
+                    "default": "preserve"
+                  },
+                  "quality": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 85
+                  },
+                  "maxKB": {
+                    "type": "integer",
+                    "default": 200
+                  },
+                  "format": {
+                    "type": "string",
+                    "enum": ["original", "webp", "avif", "jpeg", "png", "tiff", "gif"],
+                    "default": "original"
+                  },
+                  "cropFit": {
+                    "type": "string",
+                    "enum": ["cover", "contain", "inside", "fill"],
+                    "default": "inside"
+                  },
+                  "containBackground": {
+                    "type": "string",
+                    "enum": ["blur", "black", "white", "transparent"],
+                    "default": "blur"
+                  },
+                  "upscaleFactor": {
+                    "type": "integer",
+                    "enum": [1, 2, 4],
+                    "default": 1
+                  },
+                  "clarity": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "stripExif": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Image compressed successfully",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/favicon": {
+      "post": {
+        "summary": "Generate complete Favicon & Web App Manifest Suite",
+        "description": "Creates a multi-resolution favicon.ico (16x16, 32x32, 48x48), Apple Touch Icons, PWA Icons (192x192, 512x512), OG Card, manifest.json, and HTML snippet.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Logo or icon image (PNG, JPG, SVG, WebP)"
+                  },
+                  "customName": {
+                    "type": "string",
+                    "default": "Mi Web"
+                  }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Favicon bundle generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "headSnippet": {
+                      "type": "string"
+                    },
+                    "manifestContent": {
+                      "type": "string"
+                    },
+                    "icons": {
+                      "type": "array"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

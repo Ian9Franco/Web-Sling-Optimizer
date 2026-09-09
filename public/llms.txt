@@ -1,0 +1,18 @@
+# Web-Sling Optimizer
+
+> High-performance serverless image optimization, Lanczos3 super-resolution, RAW decoding, and multi-platform favicon suite.
+
+## Capabilities
+- **Multi-Format Conversion**: WebP, AVIF, JPEG, PNG, TIFF, GIF, HEIC, and Camera RAW (DNG, CR2, NEF, ARW).
+- **Quality Control**: Lossless preservation, target KB iterative limiter, and percentage quality slider.
+- **Aspect Ratio Contain & Stories**: Fill 9:16 vertical stories from horizontal images without cropping using ultrafast downscaled blur backgrounds.
+- **Super-Resolution**: Lanczos3 2x and 4x upscaling with optional adaptive clarity sharpening.
+- **Favicon Suite**: Generates multi-size ICO (16, 32, 48), Apple Touch Icon, Android Chrome PWA (192, 512), and OpenGraph cards.
+- **AI Multimodal SEO**: Vision-based semantic slug generation and ALT text extraction via Gemini 1.5 and GPT-4o.
+- **Zero-Server Storage & Privacy**: Serverless execution with zero persistent logging of uploaded images or API keys.
+
+## API Documentation
+- OpenAPI Specification: [https://web-sling-optimizer.vercel.app/openapi.json](https://web-sling-optimizer.vercel.app/openapi.json)
+- API Catalog: [https://web-sling-optimizer.vercel.app/.well-known/api-catalog](https://web-sling-optimizer.vercel.app/.well-known/api-catalog)
+- AI Catalog (ARD): [https://web-sling-optimizer.vercel.app/.well-known/ai-catalog.json](https://web-sling-optimizer.vercel.app/.well-known/ai-catalog.json)
+- MCP Server Card: [https://web-sling-optimizer.vercel.app/.well-known/mcp/server-card.json](https://web-sling-optimizer.vercel.app/.well-known/mcp/server-card.json)

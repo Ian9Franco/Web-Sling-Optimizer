@@ -1,0 +1,13 @@
+[
+  {
+    "serverInfo": {
+      "name": "web-sling-optimizer",
+      "version": "2.0.0",
+      "description": "High performance serverless image optimizer, Lanczos3 super-resolution, RAW parsing, and favicon generator."
+    },
+    "transport": {
+      "type": "http",
+      "endpoint": "https://web-sling-optimizer.vercel.app/api/compress"
+    }
+  }
+]

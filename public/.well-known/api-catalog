@@ -1,0 +1,40 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://web-sling-optimizer.vercel.app/api/compress",
+      "service-desc": [
+        {
+          "href": "https://web-sling-optimizer.vercel.app/openapi.json",
+          "type": "application/openapi+json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://web-sling-optimizer.vercel.app/llms.txt",
+          "type": "text/markdown"
+        }
+      ],
+      "status": [
+        {
+          "href": "https://web-sling-optimizer.vercel.app/api/compress",
+          "type": "application/json"
+        }
+      ]
+    },
+    {
+      "anchor": "https://web-sling-optimizer.vercel.app/api/favicon",
+      "service-desc": [
+        {
+          "href": "https://web-sling-optimizer.vercel.app/openapi.json",
+          "type": "application/openapi+json"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://web-sling-optimizer.vercel.app/llms.txt",
+          "type": "text/markdown"
+        }
+      ]
+    }
+  ]
+}

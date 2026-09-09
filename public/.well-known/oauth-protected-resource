@@ -1,0 +1,9 @@
+{
+  "resource": "https://web-sling-optimizer.vercel.app",
+  "authorization_servers": [
+    "https://web-sling-optimizer.vercel.app"
+  ],
+  "scopes_supported": ["public"],
+  "bearer_methods_supported": ["header"],
+  "resource_documentation": "https://web-sling-optimizer.vercel.app/openapi.json"
+}

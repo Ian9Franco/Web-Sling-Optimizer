@@ -1,0 +1,43 @@
+# Web-Sling Optimizer Robots.txt
+User-agent: *
+Allow: /
+Allow: /api/compress
+Allow: /api/favicon
+Allow: /.well-known/
+Allow: /llms.txt
+Allow: /openapi.json
+Allow: /auth.md
+
+# AI Crawlers & Agents
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+User-agent: Amazonbot
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+# Content Signals for AI Training & Search
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+# Sitemap
+Sitemap: https://web-sling-optimizer.vercel.app/sitemap.xml

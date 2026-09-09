@@ -1,0 +1,48 @@
+{
+  "$schema": "https://agenticresourcediscovery.org/schemas/v1/ai-catalog.json",
+  "specVersion": "1.0.0",
+  "host": {
+    "name": "Web-Sling Optimizer",
+    "domain": "web-sling-optimizer.vercel.app",
+    "description": "Serverless high-performance image optimization, Lanczos3 super-resolution, RAW decoding, and multi-platform favicon generator.",
+    "icon": "https://web-sling-optimizer.vercel.app/websling_logo.png"
+  },
+  "entries": [
+    {
+      "id": "urn:air:web-sling-optimizer.vercel.app:api:compress",
+      "displayName": "Image Compression & Upscaling API",
+      "description": "Compress, resize, upscale, and convert images into WebP, AVIF, JPEG, PNG, TIFF, or GIF formats with Lanczos3 and contain letterboxing.",
+      "type": "application/openapi+json",
+      "url": "https://web-sling-optimizer.vercel.app/openapi.json",
+      "representativeQueries": [
+        "compress image to webp or avif",
+        "upscale image with lanczos3 2x 4x",
+        "convert horizontal image to 9:16 story format with blur background",
+        "strip exif and clean metadata from image"
+      ]
+    },
+    {
+      "id": "urn:air:web-sling-optimizer.vercel.app:api:favicon",
+      "displayName": "Favicon Suite Generator API",
+      "description": "Generate multi-resolution favicon.ico, Apple touch icons, PWA icons (192, 512), OG Card and webmanifest from a logo or icon.",
+      "type": "application/openapi+json",
+      "url": "https://web-sling-optimizer.vercel.app/openapi.json",
+      "representativeQueries": [
+        "generate favicon.ico and apple touch icon",
+        "generate webmanifest and pwa icons from logo",
+        "create og card and complete favicon package"
+      ]
+    },
+    {
+      "id": "urn:air:web-sling-optimizer.vercel.app:mcp:server",
+      "displayName": "Web-Sling MCP Server Card",
+      "description": "Model Context Protocol tools definition for image processing and favicon generation.",
+      "type": "application/json",
+      "url": "https://web-sling-optimizer.vercel.app/.well-known/mcp/server-card.json",
+      "representativeQueries": [
+        "mcp tool to compress and optimize images",
+        "mcp server for generating favicons and banners"
+      ]
+    }
+  ]
+}

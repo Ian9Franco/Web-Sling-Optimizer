@@ -1,0 +1,61 @@
+{
+  "$schema": "https://modelcontextprotocol.io/schemas/server-card.json",
+  "serverInfo": {
+    "name": "web-sling-optimizer",
+    "version": "2.0.0",
+    "description": "High performance serverless image optimizer, Lanczos3 super-resolution, RAW parsing, and favicon generator."
+  },
+  "transport": {
+    "type": "http",
+    "endpoint": "https://web-sling-optimizer.vercel.app/api/compress"
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "compress_image",
+        "description": "Compress, resize, upscale, or convert an image into WebP, AVIF, JPEG, PNG, TIFF, or GIF formats.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "enum": ["original", "webp", "avif", "jpeg", "png", "tiff", "gif"],
+              "default": "webp"
+            },
+            "qualityMode": {
+              "type": "string",
+              "enum": ["preserve", "manual", "maxKB"],
+              "default": "preserve"
+            },
+            "quality": {
+              "type": "number",
+              "default": 85
+            },
+            "upscaleFactor": {
+              "type": "number",
+              "enum": [1, 2, 4],
+              "default": 1
+            },
+            "stripExif": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        }
+      },
+      {
+        "name": "generate_favicons",
+        "description": "Generate multi-resolution favicon.ico, Apple touch icon, Android PWA icons, OG card and manifest snippet from an image.",
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "customName": {
+              "type": "string",
+              "default": "App Name"
+            }
+          }
+        }
+      }
+    ]
+  }
+}

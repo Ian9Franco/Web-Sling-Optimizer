@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { WebMCPProvider } from '../components/WebMCPProvider';
 
 export const metadata: Metadata = {
   title: 'Web-Sling Optimizer - Compresión e Inspección de Imágenes',
@@ -25,8 +26,10 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className="bg-mesh text-slate-100 antialiased selection:bg-[#e62429] selection:text-white">
+        <WebMCPProvider />
         {children}
       </body>
     </html>
   );
 }
+

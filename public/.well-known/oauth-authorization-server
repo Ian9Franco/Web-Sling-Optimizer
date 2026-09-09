@@ -1,0 +1,12 @@
+{
+  "issuer": "https://web-sling-optimizer.vercel.app",
+  "authorization_endpoint": "https://web-sling-optimizer.vercel.app/auth.md",
+  "token_endpoint": "https://web-sling-optimizer.vercel.app/auth.md",
+  "response_types_supported": ["token"],
+  "grant_types_supported": ["implicit", "client_credentials"],
+  "token_endpoint_auth_methods_supported": ["none"],
+  "agent_auth": {
+    "auth_type": "none",
+    "description": "Web-Sling Optimizer is a public zero-auth serverless image processing service."
+  }
+}

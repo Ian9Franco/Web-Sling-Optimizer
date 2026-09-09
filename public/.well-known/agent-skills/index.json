@@ -1,0 +1,19 @@
+{
+  "$schema": "https://agentskills.io/schemas/v0.2.0/discovery.json",
+  "skills": [
+    {
+      "name": "image-optimization",
+      "type": "api",
+      "description": "Optimize, convert and upscale images with lossless Sharp and Lanczos3",
+      "url": "https://web-sling-optimizer.vercel.app/openapi.json",
+      "digest": "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "favicon-suite-generation",
+      "type": "api",
+      "description": "Generate complete favicon bundle and web app manifest from logo",
+      "url": "https://web-sling-optimizer.vercel.app/openapi.json",
+      "digest": "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}
