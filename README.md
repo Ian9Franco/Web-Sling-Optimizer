@@ -1,7 +1,7 @@
 # 🕸️ Web Sling Optimizer
 
 <p align="center">
-  <img src="public/websling_logo.png" alt="Web Sling Optimizer Logo" width="220" />
+  <img src="https://raw.githubusercontent.com/Ian9Franco/Web-Sling-Optimizer/main/public/websling_logo.png" alt="Web Sling Optimizer Logo" width="220" />
 </p>
 
 <p align="center">
