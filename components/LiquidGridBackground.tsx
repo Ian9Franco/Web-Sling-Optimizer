@@ -377,6 +377,21 @@ export const LiquidGridBackground: React.FC = () => {
         ctx.fill();
       }
 
+      // 6. Viñeta atmosférica de profundidad 3D (hunde el fondo y separa visualmente las tarjetas flotantes)
+      const depthVignette = ctx.createRadialGradient(
+        width / 2,
+        height / 2,
+        Math.min(width, height) * 0.25,
+        width / 2,
+        height / 2,
+        Math.max(width, height) * 0.8
+      );
+      depthVignette.addColorStop(0, 'rgba(9, 11, 16, 0)');
+      depthVignette.addColorStop(0.65, 'rgba(7, 9, 14, 0.45)');
+      depthVignette.addColorStop(1, 'rgba(3, 4, 7, 0.82)');
+      ctx.fillStyle = depthVignette;
+      ctx.fillRect(0, 0, width, height);
+
       animationFrameId = requestAnimationFrame(render);
     };
 

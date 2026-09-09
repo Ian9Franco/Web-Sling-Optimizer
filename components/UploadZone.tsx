@@ -29,8 +29,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({
       onClick={() => fileInputRef.current?.click()}
       className={`panel-border p-8 text-center cursor-pointer transition-all duration-200 border-dashed ${
         isDragging 
-          ? 'border-[#e62429] bg-[#1a1215] scale-[1.005]' 
-          : 'border-[#1e2638] hover:border-[#2563eb]/60 bg-[#111522]'
+          ? 'border-[#e62429] bg-[#1a1215]/80 scale-[1.005]' 
+          : 'border-[#1e2638] hover:border-[#2563eb]/60'
       }`}
     >
       <input
