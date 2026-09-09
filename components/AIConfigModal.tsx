@@ -61,8 +61,8 @@ export const AIConfigModal: React.FC<AIConfigModalProps> = ({
   const setActiveKey = provider === 'gemini' ? setGeminiApiKey : setOpenaiApiKey;
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#090b10]/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#111522] border border-[#1e2638] rounded-xl max-w-xl w-full p-6 shadow-2xl relative space-y-5 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 bg-[#090b10]/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-[#111522] border border-[#1e2638] rounded-xl max-w-xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 shadow-2xl relative space-y-5 animate-in fade-in duration-200">
         
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#232730]">

@@ -34,7 +34,8 @@ export const ImageTable: React.FC<ImageTableProps> = ({
 }) => {
   return (
     <div className="panel-border overflow-hidden w-full">
-      <table className="w-full text-left font-mono text-xs table-auto">
+      <div className="overflow-x-auto w-full">
+        <table className="w-full text-left font-mono text-xs table-auto min-w-[620px] sm:min-w-0">
         <thead className="bg-[#0c0d10] border-b border-[#232730] text-slate-400 uppercase text-[9px] tracking-wider">
           <tr>
             <th className="py-2.5 px-2 w-12 text-center">Img</th>
@@ -298,6 +299,7 @@ export const ImageTable: React.FC<ImageTableProps> = ({
           ))}
         </tbody>
       </table>
+      </div>
     </div>
   );
 };

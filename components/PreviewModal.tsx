@@ -60,14 +60,15 @@ export const PreviewModal: React.FC<PreviewModalProps> = ({
   if (!previewImg) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-      <div className="panel-border bg-[#111522] max-w-4xl w-full p-6 relative font-mono">
+    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="panel-border bg-[#111522] max-w-4xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 relative font-mono">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 bg-[#090b10] border border-[#232730] rounded"
+          className="absolute top-4 right-4 text-slate-400 hover:text-white"
+          title="Cerrar modal"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5" />
         </button>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 pr-8">

@@ -38,8 +38,8 @@ export const CropModal: React.FC<CropModalProps> = ({
   if (!selectedImage) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-      <div className="panel-border bg-[#111522] max-w-3xl w-full p-6 relative font-mono">
+    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="panel-border bg-[#111522] max-w-3xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 relative font-mono">
         <button
           type="button"
           onClick={onClose}

@@ -81,8 +81,8 @@ export const SrcsetModal: React.FC<SrcsetModalProps> = ({ image, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-      <div className="panel-border bg-[#111522] max-w-2xl w-full p-6 relative font-mono text-xs">
+    <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="panel-border bg-[#111522] max-w-2xl w-full max-h-[92vh] overflow-y-auto p-4 sm:p-6 relative font-mono text-xs">
         <button
           type="button"
           onClick={onClose}

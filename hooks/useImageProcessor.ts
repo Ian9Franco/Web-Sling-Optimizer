@@ -468,12 +468,41 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
   };
 
   const downloadSingle = (img: ProcessedImage) => {
-    const a = document.createElement('a');
-    a.href = img.base64Data;
-    a.download = img.outputFileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    try {
+      if (img.base64Data && img.base64Data.startsWith('data:')) {
+        const parts = img.base64Data.split(';base64,');
+        const contentType = parts[0].split(':')[1] || 'image/jpeg';
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        const blob = new Blob([uInt8Array], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = img.outputFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+      } else {
+        const a = document.createElement('a');
+        a.href = img.base64Data;
+        a.download = img.outputFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch {
+      const a = document.createElement('a');
+      a.href = img.base64Data;
+      a.download = img.outputFileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const downloadAllZip = async () => {
