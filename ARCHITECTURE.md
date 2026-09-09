@@ -1,6 +1,6 @@
 # 🏛️ Arquitectura y Árbol de Archivos (File Tree)
 
-Documentación técnica integral de **Web-Sling Optimizer**: estructura de carpetas, responsabilidades de cada módulo, flujo de datos y documentación por función.
+Documentación técnica integral de **Web-Sling Optimizer (v2.0 PRO)**: estructura de carpetas, responsabilidades de cada módulo, flujo de datos y documentación por función.
 
 ---
 
@@ -9,65 +9,82 @@ Documentación técnica integral de **Web-Sling Optimizer**: estructura de carpe
 ```text
 websling/
 ├── app/                                    # Next.js 14 App Router
-│   ├── api/                                # Endpoints de API Serverless (Node.js runtime)
+│   ├── api/                                # Endpoints de API Serverless (Node.js runtime con Sharp)
 │   │   ├── ai/
 │   │   │   └── describe/
 │   │   │       └── route.ts                # 🤖 Endpoint de Visión Multimodal (Gemini / OpenAI)
 │   │   ├── compress/
-│   │   │   └── route.ts                    # ⚡ Motor de compresión, filtros, recorte y Sharp
+│   │   │   └── route.ts                    # ⚡ Motor de compresión, Lanczos3, historias con blur y RAW
 │   │   └── favicon/
-│   │       └── route.ts                    # 🌐 Generador de favicons (.ico, .png, manifest)
-│   ├── globals.css                         # Estilos globales, variables CSS y animaciones
-│   ├── layout.tsx                          # Layout principal con metadatos y SEO
-│   └── page.tsx                            # Página principal y orquestador de componentes
-├── components/                             # Componentes modulares de interfaz (React / Tailwind)
-│   ├── AIConfigModal.tsx                   # ⚙️ Modal de configuración de API Keys (Gemini/OpenAI)
+│   │       └── route.ts                    # 🌐 Generador de favicons (.ico, .png, manifest, OG Card)
+│   ├── globals.css                         # Tokens de diseño, 3D elevation, glassmorphism y animaciones
+│   ├── layout.tsx                          # Layout raíz con WebMCPProvider y metadatos SEO
+│   └── page.tsx                            # Orquestador principal SPA y estado global reactivo
+├── components/                             # Componentes modulares de interfaz (React / Tailwind / Motion)
+│   ├── AIConfigModal.tsx                   # ⚙️ Modal de configuración de API Keys BYOK con garantía de privacidad
 │   ├── AIInteractionPreview.tsx            # 🤖 Mini popup interactivo HUD de progreso IA
-│   ├── CropModal.tsx                       # 📐 Modal inspector de recorte y aspect ratio (Ads)
-│   ├── FaviconModal.tsx                    # 📦 Modal y panel de descarga de favicon suite
-│   ├── Footer.tsx                          # 📼 Footer retro '99 con marquee infinito y rainbow bar
+│   ├── CropModal.tsx                       # 📐 Modal inspector de recorte, aspect ratio e historias 9:16
+│   ├── FaviconModal.tsx                    # 📦 Modal y panel de descarga de favicon suite y OG card
+│   ├── Footer.tsx                          # 📼 Footer retro '99 con marquee infinito, serverless y enlaces
 │   ├── GlobalDropOverlay.tsx               # 📥 Overlay visual de arrastrar y soltar archivos global
 │   ├── ImageGrid.tsx                       # 🎴 Vista de cuadrícula / tarjetas de imágenes
 │   ├── ImageTable.tsx                      # 📋 Vista de tabla compacta y responsiva (sin scroll horiz.)
 │   ├── ImageToolbar.tsx                    # 🛠️ Barra de herramientas de lote (IA, reset, zip, vistas)
-│   ├── LiquidGridBackground.tsx            # 🌊 Fondo de cuadrícula interactiva con física elástica
-│   ├── Navbar.tsx                          # 🧭 Barra de navegación superior con logo y métricas
+│   ├── InfoTooltip.tsx                     # ℹ️ Tooltips informativos con auto-posicionamiento inteligente
+│   ├── LiquidGridBackground.tsx            # 🌊 Fondo de tela líquida interactiva con física elástica
+│   ├── MetadataModal.tsx                   # 🔍 Modal inspector de metadatos EXIF, GPS y C2PA/IA
+│   ├── Navbar.tsx                          # 🧭 Barra de navegación superior con logo animado y métricas
 │   ├── PreviewModal.tsx                    # 👁️ Modal comparador visual interactivo
 │   ├── SettingsPanel.tsx                   # 🎛️ Panel de control izquierdo (calidad, recorte, presets)
 │   ├── SrcsetModal.tsx                     # 💻 Modal generador de snippets HTML5 <picture> / srcset
-│   ├── UploadZone.tsx                      # 📂 Zona de carga con drag-and-drop y soporte de ZIPs
-│   └── VisualizationPanel.tsx              # 🖥️ Panel derecho contenedor de subida y visualización
+│   ├── UploadZone.tsx                      # 📂 Zona de carga con drag-and-drop y soporte de ZIPs / RAW
+│   ├── VisualizationPanel.tsx              # 🖥️ Panel derecho contenedor de subida y visualización
+│   └── WebMCPProvider.tsx                  # 🤖 Registro de herramientas WebMCP en el navegador
 ├── hooks/                                  # Custom Hooks con lógica desacoplada
-│   ├── useAISettings.ts                    # 🧠 Gestión de estado y persistencia de API Keys
+│   ├── useAISettings.ts                    # 🧠 Gestión de estado y persistencia de API Keys en localStorage
 │   ├── useFaviconGenerator.ts              # 🌐 Gestión del ciclo de generación de favicons
 │   ├── useGlobalDrop.ts                    # 📥 Detección de arrastrar y soltar en toda la ventana
 │   └── useImageProcessor.ts                # ⚡ Motor orquestador de compresión, lote y estado
-├── public/                                 # Assets públicos e iconos estáticos
-│   ├── android-chrome-192x192.png
-│   ├── android-chrome-512x512.png
-│   ├── apple-touch-icon.png
-│   ├── favicon-16x16.png
-│   ├── favicon-32x32.png
-│   ├── favicon.ico
-│   ├── site.webmanifest
+├── public/                                 # Assets públicos, discovery y protocolos de agentes
+│   ├── .well-known/                        # Protocolos de descubrimiento de IA & Agentes
+│   │   ├── agent-skills/
+│   │   │   └── index.json                  # 🤖 Índice de Agent Skills (v0.2.0 RFC)
+│   │   ├── mcp/
+│   │   │   └── server-card.json            # ⚡ Model Context Protocol (SEP-1649 / SEP-2127)
+│   │   ├── ai-catalog.json                 # 📑 ARD (Agentic Resource Discovery Manifest)
+│   │   ├── api-catalog                     # 🔗 RFC 9727 linkset+json API Catalog
+│   │   ├── oauth-authorization-server      # 🔒 Metadatos OAuth Zero-Auth Serverless
+│   │   ├── oauth-protected-resource        # 🛡️ RFC 9728 Protected Resource Metadata
+│   │   └── openid-configuration            # 🔑 OIDC Configuration
+│   ├── auth.md                             # 📜 Especificación de autenticación pública para agentes
+│   ├── llms.txt                            # 🤖 Documentación para Modelos de Lenguaje (LLMs)
+│   ├── openapi.json                        # 📄 Especificación OpenAPI 3.1.0 completa
+│   ├── robots.txt                          # 🤖 Reglas de indexado y crawlers de IA (Content-Signals)
+│   ├── sitemap.xml                         # 🗺️ Mapa canónico del sitio
+│   ├── favicon.ico                         # Favicon ICO multi-capa
 │   └── websling_logo.png                   # 🕷️ Logo oficial de alta resolución
 ├── scripts/                                # Scripts de automatización y CLI local
 │   └── cli/
 │       ├── batch.js                        # CLI para optimización por lotes en terminal
 │       ├── resize.js                       # CLI interactivo por consola
 │       └── README.md
-├── tests/                                  # Suite de pruebas automatizadas (Vitest)
-│   ├── compress.test.ts                    # Tests de compresión y formatos
-│   └── naming.test.ts                      # Tests de patrones de nombre y slugify
+├── tests/                                  # Suite de pruebas automatizadas (Vitest - 27 Tests Pasando)
+│   ├── compress.test.ts                    # Tests de compresión, upscaling 2x/4x, historias blur y TIFF/GIF
+│   ├── favicon.test.ts                     # Tests de generación de favicons, manifest y OG Cards
+│   ├── metadata.test.ts                    # Tests de extracción de metadatos EXIF, GPS y fechas
+│   ├── naming.test.ts                      # Tests de patrones de nombre y slugify
+│   └── rawParser.test.ts                   # Tests de decodificación y parseo de RAWs de cámara
 ├── types/                                  # Definiciones de TypeScript
 │   ├── ai.ts                               # Tipos de proveedores IA, ajustes y respuestas
-│   └── image.ts                            # Tipos de imágenes procesadas, recorte y presets
+│   └── image.ts                            # Tipos de imágenes procesadas, recorte, contain y presets
 ├── utils/                                  # Utilidades puras reutilizables
 │   ├── clientPreCompress.ts                # 🛡️ Pre-compresión Canvas client-side para requests grandes
 │   ├── concurrency.ts                      # 🚦 Control de concurrencia en promesas (asyncPool)
-│   └── naming.ts                           # 🏷️ Generador de slugs, textos ALT y patrones
-├── ROADMAP_AI_UPSCALING_AND_ENHANCEMENT.md # 🚀 Hoja de ruta para Super-Resolución y remoción de fondo
-├── LICENSE                                 # Licencia MIT
+│   ├── naming.ts                           # 🏷️ Generador de slugs, textos ALT y patrones
+│   ├── rawParser.ts                        # 📷 Extractor de miniaturas embebidas en archivos RAW
+│   └── supportedFormats.ts                 # 📋 Mapeo de formatos y validación MIME
+├── middleware.ts                           # 📝 Negociación de contenido Markdown (Accept: text/markdown)
+├── next.config.js                          # ⚙️ Cabeceras Link RFC 8288, CORS y configuración Serverless
 ├── package.json                            # Dependencias y scripts de npm
 ├── tsconfig.json                           # Configuración de compilador TypeScript
 └── README.md                               # Documentación principal del repositorio
@@ -81,80 +98,59 @@ websling/
 
 #### 📍 `app/api/compress/route.ts`
 - **Función:** `POST(req: NextRequest)`
-- **Descripción:** Recibe un `FormData` con la imagen y parámetros (calidad, dimensiones, rotación, recorte, marca de agua, formato).
 - **Lógica Interna:**
-  1. Valida el tamaño de la solicitud para mantenerse dentro de los límites del entorno serverless.
-  2. Extrae metadatos con `sharp`.
-  3. Ejecuta transformaciones iniciales (rotación, escala de grises, recorte con `fit` y posición).
-  4. Inyecta marca de agua SVG si fue solicitada.
-  5. Ejecuta compresión:
-     - **Modo Manual:** Aplica la calidad solicitada (1-100%).
-     - **Modo MaxKB:** Reduce la calidad de forma iterativa en pasos hasta cumplir el peso máximo o alcanzar el umbral mínimo configurado.
-     - **Modo Sin Pérdida / máxima fidelidad:** Evita una reducción intencional de calidad; algunas transformaciones o conversiones pueden requerir recodificación.
+  1. Recibe un `FormData` con el archivo binario y parámetros (`qualityMode`, `quality`, `maxKB`, `format`, `cropFit`, `cropPosition`, `containBackground`, `upscaleFactor`, `clarity`, `stripExif`, `watermarkText`).
+  2. Valida formatos y decodifica RAWs si es necesario.
+  3. Ejecuta **Super-Resolución Lanczos3** (2x / 4x) y filtro adaptativo de nitidez si `clarity=true`.
+  4. Ejecuta modo **Historias 9:16 / Contain Letterbox**:
+     - Si `cropFit === 'contain'` y `containBackground === 'blur'`, genera un fondo desenfocado ultra-rápido en ~30ms reduciendo primero a 1/4 antes del gaussian blur y reescalando a las dimensiones del lienzo final.
+     - Compone la imagen principal centrada sobre el fondo desenfocado o color sólido.
+  5. Aplica algoritmo de compresión:
+     - **Modo Manual:** Compresión directa con la calidad solicitada (1-100%).
+     - **Modo MaxKB:** Ajuste iterativo descendente hasta no superar el peso objetivo.
+     - **Modo Lossless:** Máxima fidelidad estructural sin reducción deliberada de calidad.
   6. Devuelve payload JSON con `base64Data`, dimensiones finales, porcentaje de ahorro y peso resultante.
-
-> **Nota:** El modo MaxKB actual utiliza una búsqueda lineal descendente de calidad. Una búsqueda binaria real queda como mejora de rendimiento futura.
-
-#### 📍 `app/api/ai/describe/route.ts`
-- **Función:** `POST(req: NextRequest)`
-- **Descripción:** Analizador de visión artificial para SEO y Accesibilidad.
-- **Lógica Interna:**
-  1. Recibe la imagen o base64 y credenciales privadas del usuario para completar la solicitud al proveedor seleccionado.
-  2. Genera una miniatura ligera de 512px (JPEG 80%) para minimizar el consumo de tokens y acelerar la respuesta.
-  3. Conecta con **Google Gemini** (con fallback automático de modelos y versiones `v1beta`/`v1`) o **OpenAI GPT-4o-mini**.
-  4. Retorna `fileName` (kebab-case limpio) y `altText` contextual.
 
 #### 📍 `app/api/favicon/route.ts`
 - **Función:** `POST(req: NextRequest)`
-- **Descripción:** Generador de paquete completo de favicons web en memoria.
-- **Lógica Interna:** Genera `favicon.ico` (multi-capa 16x16, 32x32, 48x48), PNGs para Apple/Android y `site.webmanifest`.
+- **Lógica Interna:**
+  1. Recibe el logo o imagen base.
+  2. Genera `favicon.ico` con capas de 16x16, 32x32 y 48x48.
+  3. Genera PNGs para Apple Touch Icon (180x180) y Android Chrome PWA (192x192, 512x512).
+  4. Genera `og-card.png` (1200x630) con padding y fondo oscuro para redes sociales.
+  5. Retorna `site.webmanifest` y código HTML5 listo para insertar en el `<head>`.
+
+#### 📍 `app/api/ai/describe/route.ts`
+- **Función:** `POST(req: NextRequest)`
+- **Lógica Interna:**
+  1. Conecta con **Google Gemini (1.5 / 2.5 Flash)** o **OpenAI (GPT-4o-mini)**.
+  2. Analiza visualmente la escena para devolver un nombre de archivo semántico `kebab-case` y un texto descriptivo ALT accesible.
 
 ---
 
 ### 2. Custom Hooks (`hooks/`)
 
-#### 📍 `hooks/useImageProcessor.ts`
-- **Funciones Principales:**
-  - `handleFiles(files)`: Procesa archivos subidos (incluyendo extracción de `.zip`).
-  - `reprocessBatch(overrides)`: Re-ejecuta la compresión sobre la lista activa preservando nombres SEO y textos ALT.
-  - `analyzeSingleAI(img, settings)`: Analiza una imagen individual con la IA y actualiza su estado.
-  - `analyzeBatchAI(settings)`: Analiza todas las imágenes del lote en paralelo controlado (2 concurrentes).
-  - `downloadAllZip()`: Empaqueta todas las imágenes optimizadas en un ZIP junto con `metadata.json`.
-  - `applyBatchRename(pattern)`: Aplica un patrón de comodines (`{slug}`, `{width}`, `{index}`, etc.).
-
-#### 📍 `hooks/useAISettings.ts`
-- **Función:** Administra las claves de API (Gemini/OpenAI), modelo seleccionado y contexto de marca en `localStorage`.
-
-#### 📍 `hooks/useGlobalDrop.ts`
-- **Función:** Escucha eventos de arrastrar y soltar (`dragover`, `drop`) y pegado de imágenes (`paste` / Ctrl+V) en toda la ventana del navegador.
-
-#### 📍 `hooks/useFaviconGenerator.ts`
-- **Función:** Maneja el estado y descarga en `.zip` de la suite de favicons generada.
+- **`useImageProcessor.ts`:** Orquesta el ciclo completo de vida de las imágenes, compresión en lote, análisis con IA, recorte, descargas individuales y exportación en ZIP.
+- **`useAISettings.ts`:** Almacena y recupera las API Keys BYOK de Google Gemini y OpenAI en `localStorage` con privacidad total garantizada.
+- **`useFaviconGenerator.ts`:** Gestiona el estado de generación y descarga del paquete de favicons.
+- **`useGlobalDrop.ts`:** Escucha eventos de arrastrar y soltar globales y pegado desde el portapapeles (`Ctrl + V`).
 
 ---
 
-### 3. Utilidades (`utils/`)
+### 3. Middleware & Descubrimiento de Agentes
 
-#### 📍 `utils/clientPreCompress.ts`
-- **Función:** `clientPreCompress(file: File | Blob): Promise<File>`
-- **Descripción:** Cuando una imagen supera el umbral configurado y requiere transformación, puede precomprimirse en un `<canvas>` antes de enviarse por HTTP para reducir el riesgo de exceder los límites de payload del entorno serverless. Si el usuario seleccionó un flujo que preserve el archivo original, no se modifica de forma preventiva.
-
-#### 📍 `utils/naming.ts`
-- **Funciones:**
-  - `slugify(text)`: Limpia acentos, caracteres especiales y espacios convirtiéndolos a kebab-case.
-  - `generateAltText(fileName)`: Genera un texto alternativo básico a partir del nombre.
-  - `resolveFileNamePattern(pattern, img, index)`: Resuelve comodines (`{slug}`, `{original}`, `{width}`, `{height}`, `{quality}`, `{format}`, `{index}`, `{0index}`).
-
-#### 📍 `utils/concurrency.ts`
-- **Función:** `asyncPool(poolLimit, array, iteratorFn)`
-- **Descripción:** Limita la cantidad de promesas que se ejecutan en simultáneo para evitar saturar el navegador o la conexión de red.
+- **`middleware.ts`:** Intercepta peticiones entrantes:
+  - Si el cliente solicita `Accept: text/markdown` o `/index.md`, devuelve una versión en Markdown con metadatos `x-markdown-tokens`.
+  - Inyecta cabeceras `Link` (RFC 8288 / RFC 9727) apuntando a los catálogos de API y MCP.
+- **`WebMCPProvider.tsx`:** Registra las herramientas de compresión y favicons en `navigator.modelContext` en navegadores compatibles con WebMCP.
 
 ---
 
-### 4. Componentes Visuales Clave (`components/`)
+## 🧪 Suite de Tests Automatizados (`tests/`)
 
-- **`LiquidGridBackground.tsx`:** Canvas con física elástica de resorte (*spring physics*) y cálculo de deformación por gravedad según el cursor.
-- **`AIInteractionPreview.tsx`:** Ventana flotante estilo HUD en la esquina inferior derecha que se abre al comenzar el análisis de IA y se cierra al finalizar.
-- **`ImageTable.tsx`:** Tabla adaptativa sin scroll horizontal con inputs inline, botón de análisis de IA individual y acciones rápidas.
-- **`SettingsPanel.tsx`:** Panel con controles de calidad, presets nativos y personalizados, redimensionamiento, recorte, marca de agua y renombramiento.
-- **`Footer.tsx`:** Pie de página con franja rainbow retro '99 y marquesina animada en bucle infinito.
+El proyecto cuenta con **27 tests automatizados en Vitest**:
+- `tests/compress.test.ts`: Validación de compresión, upscaling Lanczos3 2x, claridad HD, historias 9:16 con blur background y exportación a TIFF/GIF.
+- `tests/favicon.test.ts`: Validación de generación del paquete de 7 iconos, OG Card y WebManifest.
+- `tests/metadata.test.ts`: Extracción de metadatos EXIF, coordenadas GPS, fechas y dimensiones.
+- `tests/rawParser.test.ts`: Decodificación y parsing de archivos RAW de cámara.
+- `tests/naming.test.ts`: Sanitización de nombres, slugify y reemplazo de tokens dinámicos.
