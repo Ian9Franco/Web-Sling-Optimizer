@@ -1,6 +1,7 @@
 {
   "name": "Mi Aplicación Web",
   "short_name": "App",
+  "description": "Sitio web y aplicación optimizada para alto rendimiento.",
   "icons": [
     {
       "src": "/android-chrome-192x192.png",
@@ -13,7 +14,8 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
-  "display": "standalone"
+  "theme_color": "#2563eb",
+  "background_color": "#090b10",
+  "display": "standalone",
+  "start_url": "/"
 }
