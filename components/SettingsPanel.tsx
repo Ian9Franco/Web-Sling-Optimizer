@@ -19,6 +19,7 @@ import {
 import { CropFit, CropPosition, ContainBackground, ReprocessOverrides, CustomPreset, ProcessedImage } from '../types/image';
 import { resolveFileNamePattern } from '../utils/naming';
 import { InfoTooltip } from './InfoTooltip';
+import { CompressionInfoPanel } from './CompressionInfoPanel';
 
 interface SettingsPanelProps {
   preserveQuality: boolean;
@@ -202,6 +203,20 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   return (
     <div className="space-y-6">
+      <CompressionInfoPanel
+        qualityMode={qualityMode}
+        quality={quality}
+        maxKB={maxKB}
+        resizeMode={resizeMode}
+        customWidth={customWidth}
+        customHeight={customHeight}
+        upscaleFactor={upscaleFactor}
+        clarity={clarity}
+        format={format}
+        stripExif={stripExif}
+        cropFit={cropFit}
+      />
+
       {/* Presets Rápidos de 1-Clic */}
       <div className="panel-border p-4 space-y-3">
         <div className="flex items-center justify-between">
