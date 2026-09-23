@@ -33,10 +33,10 @@ export const ImageTable: React.FC<ImageTableProps> = ({
   analyzingId,
 }) => {
   return (
-    <div className="panel-border overflow-hidden w-full">
-      <div className="overflow-x-auto w-full">
+    <div className="panel-border overflow-visible w-full">
+      <div className="overflow-x-auto w-full rounded-[inherit]">
         <table className="w-full text-left font-mono text-xs table-auto min-w-[620px] sm:min-w-0">
-        <thead className="bg-[#0c0d10] border-b border-[#232730] text-slate-400 uppercase text-[9px] tracking-wider">
+        <thead className="relative z-10 bg-[#0c0d10] border-b border-[#232730] text-slate-400 uppercase text-[9px] tracking-wider">
           <tr>
             <th className="py-2.5 px-2 w-12 text-center">Img</th>
             <th className="py-2.5 px-2">
@@ -239,8 +239,8 @@ export const ImageTable: React.FC<ImageTableProps> = ({
               </td>
 
               {/* Columna Acciones */}
-              <td className="py-2 px-2 align-middle text-right whitespace-nowrap">
-                <div className="flex items-center justify-end gap-1">
+              <td className="py-2 px-2 align-middle text-right whitespace-nowrap relative z-0">
+                <div className="flex items-center justify-end gap-1 relative z-0">
                   <button
                     type="button"
                     onClick={() => onInspectMetadata && onInspectMetadata(img)}
