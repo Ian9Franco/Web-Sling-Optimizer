@@ -121,6 +121,15 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
                         ✨ Claridad
                       </span>
                     )}
+                    {img.monochrome && (
+                      <span className="text-[9px] font-mono text-slate-300 font-medium">B/N</span>
+                    )}
+                    {img.svgRender === 'vector' && (
+                      <span className="text-[9px] font-mono text-cyan-300 font-medium">vector</span>
+                    )}
+                    {img.svgRender === 'embed' && (
+                      <span className="text-[9px] font-mono text-cyan-300 font-medium">embebido</span>
+                    )}
                   </div>
                 </div>
                 <div className="text-slate-400 flex justify-between text-[11px]">

@@ -234,6 +234,21 @@ export const ImageTable: React.FC<ImageTableProps> = ({
                         ✨ Claridad HD
                       </span>
                     )}
+                    {img.monochrome && (
+                      <span className="block text-[9px] font-mono text-slate-300 font-medium">
+                        B/N
+                      </span>
+                    )}
+                    {img.svgRender === 'vector' && (
+                      <span className="block text-[9px] font-mono text-cyan-300/90 font-medium">
+                        SVG vector
+                      </span>
+                    )}
+                    {img.svgRender === 'embed' && (
+                      <span className="block text-[9px] font-mono text-cyan-300/90 font-medium">
+                        SVG embebido
+                      </span>
+                    )}
                   </div>
                 ) : '-'}
               </td>

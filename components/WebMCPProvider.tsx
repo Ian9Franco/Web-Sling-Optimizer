@@ -11,13 +11,13 @@ export const WebMCPProvider: React.FC = () => {
           tools: [
             {
               name: 'compress_image',
-              description: 'Compress, resize, upscale, or convert an image into WebP, AVIF, JPEG, PNG, TIFF, or GIF formats.',
+              description: 'Compress, resize, upscale, or convert an image into WebP, AVIF, JPEG, PNG, TIFF, GIF, or SVG. SVG input rasterizes to other formats and any image can be exported as SVG.',
               inputSchema: {
                 type: 'object',
                 properties: {
                   format: { 
                     type: 'string', 
-                    enum: ['original', 'webp', 'avif', 'jpeg', 'png', 'tiff', 'gif'],
+                    enum: ['original', 'webp', 'avif', 'jpeg', 'png', 'tiff', 'gif', 'svg'],
                     default: 'webp'
                   },
                   quality: { type: 'number', default: 85 },

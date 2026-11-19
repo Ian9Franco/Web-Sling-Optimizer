@@ -19,8 +19,12 @@ export interface ProcessedImage {
   errorMessage?: string;
   upscaleApplied?: number;
   clarityApplied?: boolean;
+  monochrome?: boolean;
+  svgRender?: 'vector' | 'embed' | 'source';
   metadataDetails?: ImageMetadataDetails;
 }
+
+export type SvgRenderMode = 'auto' | 'vector' | 'embed';
 
 export interface AiDetectionResult {
   isAiGenerated: boolean;
@@ -126,6 +130,8 @@ export interface ReprocessOverrides {
   borderPadding?: number;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
+  grayscale?: boolean;
+  svgMode?: SvgRenderMode;
 }
 
 export interface CustomPreset {

@@ -180,6 +180,7 @@ export const CompressionInfoPanel: React.FC<CompressionInfoPanelProps> = ({
         'WebP / AVIF: máxima compresión para web.',
         'JPEG: compatibilidad universal.',
         'PNG: ideal para transparencias.',
+        'SVG: de un SVG a raster, o de cualquier imagen a SVG vectorial o embebido.',
       ],
     },
     {

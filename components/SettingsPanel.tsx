@@ -14,9 +14,10 @@ import {
   Check,
   X,
   Wand2,
-  Sparkles
+  Sparkles,
+  Contrast
 } from 'lucide-react';
-import { CropFit, CropPosition, ContainBackground, ReprocessOverrides, CustomPreset, ProcessedImage } from '../types/image';
+import { CropFit, CropPosition, ContainBackground, ReprocessOverrides, CustomPreset, ProcessedImage, SvgRenderMode } from '../types/image';
 import { resolveFileNamePattern } from '../utils/naming';
 import { InfoTooltip } from './InfoTooltip';
 import { CompressionInfoPanel } from './CompressionInfoPanel';
@@ -50,6 +51,10 @@ interface SettingsPanelProps {
   setClarity: (val: boolean) => void;
   format: string;
   setFormat: (val: string) => void;
+  svgMode: SvgRenderMode;
+  setSvgMode: (val: SvgRenderMode) => void;
+  onCreateMonochrome: () => void;
+  isCreatingMonochrome: boolean;
   rotate: number;
   setRotate: React.Dispatch<React.SetStateAction<number>>;
   flip: boolean;
@@ -101,6 +106,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   setClarity,
   format,
   setFormat,
+  svgMode,
+  setSvgMode,
+  onCreateMonochrome,
+  isCreatingMonochrome,
   rotate,
   setRotate,
   flip,
@@ -807,7 +816,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <label className="text-xs font-mono text-slate-400 block">Formato de Salida</label>
               <InfoTooltip
                 title="Formatos de Imagen"
-                description="Convierte tus imágenes a WebP o AVIF para lograr la máxima compresión y velocidad web. JPG para máxima compatibilidad, PNG para transparencias, y TIFF/HEIC para edición profesional."
+                description="Convierte tus imágenes a WebP o AVIF para la web, JPG para compatibilidad, PNG para transparencias, TIFF/HEIC para edición y SVG en ambos sentidos: de SVG a raster y de cualquier imagen a SVG."
                 tip="WebP y AVIF son los estándares recomendados por Google PageSpeed para mejorar el SEO."
               />
             </div>
@@ -830,11 +839,30 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <option value="avif">AVIF (Ultra Compresión Moderna)</option>
             </optgroup>
             <optgroup label="Formatos Especiales &amp; Raros">
+              <option value="svg">SVG (Vector o embebido)</option>
               <option value="tiff">TIFF / TIF (Edición &amp; Impresión Pro)</option>
               <option value="gif">GIF (Frame Estático Web)</option>
               <option value="heic">HEIC / HEIF (Apple Pro Format)</option>
             </optgroup>
           </select>
+          {format === 'svg' && (
+            <div className="space-y-1">
+              <label className="text-[10px] font-mono text-slate-400 block">Cómo generar el SVG</label>
+              <select
+                value={svgMode}
+                onChange={(e) => {
+                  const val = e.target.value as SvgRenderMode;
+                  setSvgMode(val);
+                  reprocessBatch({ svgMode: val, format: 'svg' });
+                }}
+                className="w-full bg-[#0c0d10] border border-[#232730] focus:border-[#2563eb] text-xs font-mono rounded-lg p-2.5 text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="auto">Automático (vector si es logo, embebido si es foto)</option>
+                <option value="vector">Vectorial (trazos escalables)</option>
+                <option value="embed">Embebido (conserva la foto dentro del SVG)</option>
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Herramientas de Edición & Seguridad */}
@@ -885,11 +913,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               <input
                 type="checkbox"
                 checked={grayscale}
-                onChange={(e) => setGrayscale(e.target.checked)}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setGrayscale(checked);
+                  reprocessBatch({ grayscale: checked });
+                }}
                 className="rounded accent-[#e62429]"
               />
-              <span>Convertir a Blanco y Negro</span>
+              <span>Convertir la salida a Blanco y Negro</span>
             </label>
+
+            <button
+              type="button"
+              onClick={onCreateMonochrome}
+              disabled={images.length === 0 || isCreatingMonochrome || grayscale}
+              className="w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded border border-[#232730] bg-[#0c0d10] text-slate-200 font-mono text-xs hover:border-[#e62429] transition disabled:opacity-40"
+              title="Agrega una copia en blanco y negro y conserva la versión a color"
+            >
+              <Contrast className="w-3.5 h-3.5 text-slate-300" />
+              <span>{isCreatingMonochrome ? 'Creando versión B/N...' : 'Crear versión B/N'}</span>
+            </button>
+            <p className="text-[10px] text-slate-500 leading-tight">
+              La copia queda junto a cada imagen, con el sufijo -bn, en el formato de salida actual.
+            </p>
 
             <label className="flex items-center gap-2 cursor-pointer text-slate-300">
               <input

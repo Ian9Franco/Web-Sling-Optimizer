@@ -9,7 +9,7 @@ const MARKDOWN_CONTENT = `# Web-Sling Optimizer PRO
 URL: https://web-sling-optimizer.vercel.app
 
 ## Features & Capabilities
-1. **Multi-Format Processing**: WebP, AVIF, JPEG, PNG, TIFF, GIF, HEIC, and Camera RAW (DNG, CR2, NEF, ARW).
+1. **Multi-Format Processing**: WebP, AVIF, JPEG, PNG, TIFF, GIF, HEIC, SVG (vector or embedded, both directions), Camera RAW (DNG, CR2, NEF, ARW), and black-and-white copies.
 2. **Quality Modes**:
    - Lossless (100% original fidelity)
    - Quality Slider (1% - 100%)

@@ -93,3 +93,12 @@ export function resolveFileNamePattern(
 
   return `${result}${outExt}`;
 }
+
+/** Agrega el sufijo -bn antes de la extensión para la copia en blanco y negro. */
+export function withMonochromeSuffix(fileName: string): string {
+  const dot = fileName.lastIndexOf('.');
+  const base = dot !== -1 ? fileName.substring(0, dot) : fileName;
+  const ext = dot !== -1 ? fileName.substring(dot) : '';
+  if (/-bn$/i.test(base)) return `${base}${ext}`;
+  return `${base}-bn${ext}`;
+}
