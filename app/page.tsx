@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { CropFit, CropPosition, ContainBackground } from '../types/image';
+import { CropFit, CropPosition, ContainBackground, SvgRenderMode } from '../types/image';
 import { Navbar } from '../components/Navbar';
 import { SettingsPanel } from '../components/SettingsPanel';
 import { VisualizationPanel } from '../components/VisualizationPanel';
@@ -27,6 +27,7 @@ export default function HomePage() {
   const [quality, setQuality] = useState<number>(85);
   const [maxKB, setMaxKB] = useState<number>(200);
   const [format, setFormat] = useState<string>('original');
+  const [svgMode, setSvgMode] = useState<SvgRenderMode>('auto');
 
   // Redimensionamiento, Recorte y Super-Resolución
   const [resizeMode, setResizeMode] = useState<'none' | 'custom'>('none');
@@ -77,6 +78,8 @@ export default function HomePage() {
     analyzeBatchAI,
     handleFiles,
     reprocessBatch,
+    createMonochromeVersions,
+    isCreatingMonochrome,
     handleApplyCrop,
     handleReprocessSingle,
     removeSingleImage,
@@ -110,6 +113,7 @@ export default function HomePage() {
     borderPadding,
     upscaleFactor,
     clarity,
+    svgMode,
   });
 
   // Generador de Favicons
@@ -242,6 +246,10 @@ export default function HomePage() {
               setClarity={setClarity}
               format={format}
               setFormat={setFormat}
+              svgMode={svgMode}
+              setSvgMode={setSvgMode}
+              onCreateMonochrome={createMonochromeVersions}
+              isCreatingMonochrome={isCreatingMonochrome}
               rotate={rotate}
               setRotate={setRotate}
               flip={flip}

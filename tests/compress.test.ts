@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 import { POST as compressHandler } from '../app/api/compress/route';
 import { POST as faviconHandler } from '../app/api/favicon/route';
 
@@ -246,6 +247,123 @@ describe('API /api/compress', () => {
     expect(jsonPadding.success).toBe(true);
     expect(jsonPadding.finalWidth).toBe(800);
     expect(jsonPadding.finalHeight).toBe(800);
+  });
+
+  it('convierte un SVG a PNG y conserva un SVG de origen sin rasterizarlo', async () => {
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="80" height="40">
+  <rect width="80" height="40" fill="#e62429"/>
+  <script>alert('x')</script>
+</svg>`;
+    const svgBlob = new Blob([svg], { type: 'image/svg+xml' });
+
+    const toPng = new FormData();
+    toPng.append('file', svgBlob, 'logo.svg');
+    toPng.append('format', 'png');
+    toPng.append('preserveQuality', 'true');
+    const pngRes = await compressHandler(new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: toPng }));
+    expect(pngRes.status).toBe(200);
+    const pngJson = await pngRes.json();
+    expect(pngJson.formatApplied).toBe('PNG');
+    expect(pngJson.finalWidth).toBe(80);
+    expect(pngJson.finalHeight).toBe(40);
+    expect(pngJson.mimeType).toBe('image/png');
+
+    const keepSvg = new FormData();
+    keepSvg.append('file', svgBlob, 'logo.svg');
+    keepSvg.append('format', 'svg');
+    keepSvg.append('preserveQuality', 'true');
+    const svgRes = await compressHandler(new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: keepSvg }));
+    expect(svgRes.status).toBe(200);
+    const svgJson = await svgRes.json();
+    expect(svgJson.formatApplied).toBe('SVG');
+    expect(svgJson.svgRender).toBe('source');
+    expect(svgJson.outputFileName).toContain('.svg');
+    const svgOut = Buffer.from(svgJson.base64Data.split(',')[1], 'base64').toString('utf8');
+    expect(svgOut).toContain('<rect');
+    expect(svgOut.toLowerCase()).not.toContain('<script');
+  });
+
+  it('convierte un raster plano a SVG vectorial y una foto a SVG embebido', async () => {
+    const flat = await sharp({
+      create: { width: 40, height: 40, channels: 3, background: { r: 255, g: 255, b: 255 } },
+    }).composite([{
+      input: await sharp({
+        create: { width: 16, height: 16, channels: 3, background: { r: 0, g: 0, b: 0 } },
+      }).png().toBuffer(),
+      left: 12,
+      top: 12,
+    }]).png().toBuffer();
+
+    const vectorForm = new FormData();
+    vectorForm.append('file', new Blob([flat], { type: 'image/png' }), 'icono.png');
+    vectorForm.append('format', 'svg');
+    vectorForm.append('svgMode', 'vector');
+    vectorForm.append('preserveQuality', 'true');
+    const vectorRes = await compressHandler(new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: vectorForm }));
+    expect(vectorRes.status).toBe(200);
+    const vectorJson = await vectorRes.json();
+    expect(vectorJson.formatApplied).toBe('SVG');
+    expect(vectorJson.svgRender).toBe('vector');
+    const vectorSvg = Buffer.from(vectorJson.base64Data.split(',')[1], 'base64').toString('utf8');
+    expect(vectorSvg).toContain('<path');
+    expect(vectorJson.finalWidth).toBe(40);
+    expect(vectorJson.finalHeight).toBe(40);
+
+    const width = 48;
+    const height = 48;
+    const raw = Buffer.alloc(width * height * 3);
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 3;
+        raw[i] = Math.round((x / width) * 255);
+        raw[i + 1] = Math.round((y / height) * 255);
+        raw[i + 2] = 80;
+      }
+    }
+    const photo = await sharp(raw, { raw: { width, height, channels: 3 } }).png().toBuffer();
+    const embedForm = new FormData();
+    embedForm.append('file', new Blob([photo], { type: 'image/png' }), 'foto.png');
+    embedForm.append('format', 'svg');
+    embedForm.append('svgMode', 'embed');
+    embedForm.append('preserveQuality', 'true');
+    const embedRes = await compressHandler(new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: embedForm }));
+    expect(embedRes.status).toBe(200);
+    const embedJson = await embedRes.json();
+    expect(embedJson.formatApplied).toBe('SVG');
+    expect(embedJson.svgRender).toBe('embed');
+    const embedSvg = Buffer.from(embedJson.base64Data.split(',')[1], 'base64').toString('utf8');
+    expect(embedSvg).toContain('<image');
+    expect(embedSvg).toContain('data:image/png;base64,');
+  });
+
+  it('exporta una versión en blanco y negro con canales iguales', async () => {
+    const color = await sharp({
+      create: { width: 24, height: 24, channels: 3, background: { r: 220, g: 30, b: 40 } },
+    }).png().toBuffer();
+
+    const formData = new FormData();
+    formData.append('file', new Blob([color], { type: 'image/png' }), 'color.png');
+    formData.append('format', 'png');
+    formData.append('grayscale', 'true');
+    formData.append('preserveQuality', 'true');
+
+    const res = await compressHandler(new NextRequest('http://localhost:3000/api/compress', { method: 'POST', body: formData }));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.monochrome).toBe(true);
+    expect(json.formatApplied).toBe('PNG');
+
+    const out = Buffer.from(json.base64Data.split(',')[1], 'base64');
+    const { data, info } = await sharp(out).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    expect(info.width).toBe(24);
+    const r = data[0];
+    const g = data[1];
+    const b = data[2];
+    expect(r).toBe(g);
+    expect(g).toBe(b);
+    expect(r).toBeGreaterThan(10);
+    expect(r).toBeLessThan(250);
   });
 });
 

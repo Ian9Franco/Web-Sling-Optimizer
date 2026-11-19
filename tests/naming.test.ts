@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { slugify, generateAltText, resolveFileNamePattern } from '../utils/naming';
+import { slugify, generateAltText, resolveFileNamePattern, withMonochromeSuffix } from '../utils/naming';
 
 describe('Utilidades de Renombrado SEO y Texto ALT', () => {
   it('slugify debe normalizar acentos, espacios y caracteres especiales en kebab-case', () => {
@@ -29,5 +29,10 @@ describe('Utilidades de Renombrado SEO y Texto ALT', () => {
 
     // Patrón con dimensiones
     expect(resolveFileNamePattern('{original}-{width}', img, 0)).toBe('sofa3-1000.jpg');
+  });
+
+  it('withMonochromeSuffix agrega -bn una sola vez', () => {
+    expect(withMonochromeSuffix('foto.png')).toBe('foto-bn.png');
+    expect(withMonochromeSuffix('foto-bn.webp')).toBe('foto-bn.webp');
   });
 });

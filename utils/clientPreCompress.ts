@@ -14,6 +14,12 @@ const MAX_SERVERLESS_SAFE_BYTES = 4.1 * 1024 * 1024;
 export async function clientPreCompress(file: File | Blob, originalName?: string): Promise<File> {
   const fileName = originalName || (file instanceof File ? file.name : 'image.jpg');
 
+  // Los SVG se envían tal cual: rasterizarlos en canvas perdería los trazos.
+  if (fileName.toLowerCase().endsWith('.svg') || file.type === 'image/svg+xml') {
+    if (file instanceof File) return file;
+    return new File([file], fileName, { type: file.type || 'image/svg+xml' });
+  }
+
   // Si ya es menor al umbral seguro, no tocar nada
   if (file.size <= MAX_SERVERLESS_SAFE_BYTES) {
     if (file instanceof File) return file;

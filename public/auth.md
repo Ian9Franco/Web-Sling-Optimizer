@@ -8,7 +8,7 @@ Web-Sling Optimizer is an open, serverless, zero-auth developer utility and imag
 - **Client-Side Privacy**: Web-Sling operates on a Zero-Server-Storage policy. Images and API keys for AI Vision (Google Gemini / OpenAI) are processed in-memory or kept in client-side `localStorage`. No user data or credentials are persisted on servers.
 
 ## API Endpoints
-- `POST https://web-sling-optimizer.vercel.app/api/compress` - Multi-format image compression, Lanczos3 super-resolution, aspect ratio contain padding, and EXIF strip.
+- `POST https://web-sling-optimizer.vercel.app/api/compress` - Multi-format image compression (including SVG in both directions and grayscale), Lanczos3 super-resolution, aspect ratio contain padding, and EXIF strip.
 - `POST https://web-sling-optimizer.vercel.app/api/favicon` - Multi-platform favicon generator (ICO, PNG, WebManifest, OG Card).
 
 ## Registration

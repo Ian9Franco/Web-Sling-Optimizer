@@ -25,7 +25,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "Image file (JPG, PNG, WebP, AVIF, RAW, HEIC, TIFF, GIF)"
+                    "description": "Image file (JPG, PNG, WebP, AVIF, RAW, HEIC, TIFF, GIF, SVG)"
                   },
                   "qualityMode": {
                     "type": "string",
@@ -44,8 +44,19 @@
                   },
                   "format": {
                     "type": "string",
-                    "enum": ["original", "webp", "avif", "jpeg", "png", "tiff", "gif"],
+                    "enum": ["original", "webp", "avif", "jpeg", "png", "tiff", "gif", "svg"],
                     "default": "original"
+                  },
+                  "svgMode": {
+                    "type": "string",
+                    "enum": ["auto", "vector", "embed"],
+                    "default": "auto",
+                    "description": "When format is svg: auto traces flat logos and embeds photos, vector forces paths, embed keeps the raster inside the SVG."
+                  },
+                  "grayscale": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Export a black and white version of the image."
                   },
                   "cropFit": {
                     "type": "string",

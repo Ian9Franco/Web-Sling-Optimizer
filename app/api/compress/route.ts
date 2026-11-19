@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import sharp from 'sharp';
 import { RAW_CAMERA_REGEX } from '../../../utils/supportedFormats';
+import { convertRasterToSvg, isSvgBuffer, sanitizeSvg } from '../../../utils/svgConvert';
+import type { SvgRenderMode } from '../../../types/image';
 
 // Límite de carga serverless para evitar fallos de infraestructura (4.5 MB)
 const MAX_FILE_SIZE_BYTES = 4.5 * 1024 * 1024;
@@ -76,7 +78,9 @@ export async function POST(req: NextRequest) {
     const resizeMode = (formData.get('resizeMode') as string) || 'none'; // 'none' | 'custom'
     const maxWidth = parseInt((formData.get('maxWidth') as string) || '0', 10);
     const maxHeight = parseInt((formData.get('maxHeight') as string) || '0', 10);
-    const preferredFormat = (formData.get('format') as string) || 'original'; // 'original' | 'jpg' | 'webp' | 'png' | 'avif'
+    const preferredFormat = (formData.get('format') as string) || 'original'; // 'original' | 'jpg' | 'webp' | 'png' | 'avif' | 'svg'
+    const svgModeRaw = ((formData.get('svgMode') as string) || 'auto').toLowerCase();
+    const svgMode: SvgRenderMode = svgModeRaw === 'vector' || svgModeRaw === 'embed' ? svgModeRaw : 'auto';
 
     // Opciones avanzadas de transformaciones
     const rotateAngle = parseInt((formData.get('rotate') as string) || '0', 10);
@@ -113,11 +117,15 @@ export async function POST(req: NextRequest) {
 
     const arrayBuffer = await file.arrayBuffer();
     const inputBuffer = Buffer.from(arrayBuffer);
+    const isSvgInput = isSvgBuffer(inputBuffer, file.name, file.type || '');
+    const openSource = () => isSvgInput
+      ? sharp(inputBuffer, { density: 72, unlimited: true })
+      : sharp(inputBuffer);
 
     // 3. Validación: Integridad y formato de imagen con sharp
     let metadata;
     try {
-      metadata = await sharp(inputBuffer).metadata();
+      metadata = await openSource().metadata();
       if (!metadata.format) {
         return NextResponse.json(
           { error: 'El archivo subido no contiene un formato de imagen reconocido.' },
@@ -153,10 +161,12 @@ export async function POST(req: NextRequest) {
     else if (preferredFormat === 'tiff' || preferredFormat === 'tif') targetExt = '.tiff';
     else if (preferredFormat === 'gif') targetExt = '.gif';
     else if (preferredFormat === 'heic' || preferredFormat === 'heif') targetExt = '.heic';
+    else if (preferredFormat === 'svg') targetExt = '.svg';
     else if (preferredFormat === 'original' && isRawCameraFile) targetExt = '.jpg';
+    else if (preferredFormat === 'original' && isSvgInput) targetExt = '.svg';
 
     // Salvaguarda: si targetExt no es un formato de salida soportado, exportar a jpg
-    if (!['.jpg', '.jpeg', '.webp', '.png', '.avif', '.tiff', '.tif', '.gif', '.heic', '.heif'].includes(targetExt)) {
+    if (!['.jpg', '.jpeg', '.webp', '.png', '.avif', '.tiff', '.tif', '.gif', '.heic', '.heif', '.svg'].includes(targetExt)) {
       targetExt = '.jpg';
     }
 
@@ -198,8 +208,22 @@ export async function POST(req: NextRequest) {
       watermarkSvgBuffer = Buffer.from(svgText);
     }
 
+    const pixelAltering = (
+      rotateAngle > 0 ||
+      flipHorizontal ||
+      applyGrayscale ||
+      applyClarity ||
+      upscaleFactor > 1 ||
+      watermarkText !== '' ||
+      (resizeMode === 'custom' && (maxWidth > 0 || maxHeight > 0))
+    );
+    const keepSourceSvg = isSvgInput && targetExt === '.svg' && !pixelAltering;
+    let svgRender: 'vector' | 'embed' | 'source' | undefined;
+    let svgPixelWidth = originalWidth;
+    let svgPixelHeight = originalHeight;
+
     // ETAPA 1: Pipeline de transformaciones geométricas y filtros (ejecutado UNA sola vez)
-    let transformPipeline = sharp(inputBuffer);
+    let transformPipeline = openSource();
 
     if (!stripExif) {
       transformPipeline = transformPipeline.withMetadata();
@@ -226,7 +250,7 @@ export async function POST(req: NextRequest) {
         const innerMaxW = Math.max(1, Math.round(targetW * paddingRatio));
         const innerMaxH = Math.max(1, Math.round(targetH * paddingRatio));
 
-        const fgBuffer = await sharp(inputBuffer)
+        const fgBuffer = await openSource()
           .rotate(rotateAngle > 0 ? rotateAngle : 0)
           .flop(flipHorizontal)
           .grayscale(applyGrayscale)
@@ -243,7 +267,7 @@ export async function POST(req: NextRequest) {
           const lowResW = Math.max(160, Math.round(targetW / 4));
           const lowResH = Math.max(160, Math.round(targetH / 4));
 
-          const bgBuffer = await sharp(inputBuffer)
+          const bgBuffer = await openSource()
             .rotate(rotateAngle > 0 ? rotateAngle : 0)
             .resize(lowResW, lowResH, { fit: 'cover', position: 'center' })
             .blur(14)
@@ -311,8 +335,15 @@ export async function POST(req: NextRequest) {
       ]);
     }
 
-    // Buffer base transformado en PNG lossless sin compresión (rápido en memoria, conserva alpha y metadatos)
-    const transformedBuffer = await transformPipeline.png({ compressionLevel: 0 }).toBuffer();
+    // Buffer base transformado en PNG lossless sin compresión (rápido en memoria, conserva alpha y metadatos).
+    // Un SVG de origen sin cambios de píxel se conserva vectorial.
+    let transformedBuffer: Buffer;
+    if (keepSourceSvg) {
+      transformedBuffer = Buffer.from(sanitizeSvg(inputBuffer.toString('utf8')), 'utf8');
+      svgRender = 'source';
+    } else {
+      transformedBuffer = await transformPipeline.png({ compressionLevel: 0 }).toBuffer();
+    }
 
     let finalBuffer: Buffer = transformedBuffer;
 
@@ -336,7 +367,21 @@ export async function POST(req: NextRequest) {
       : Math.min(maxSizeBytes, Math.floor(originalSize * 0.95));
 
     // ETAPA 2: Proceso de codificación
-    if (hasExplicitQuality) {
+    if (keepSourceSvg) {
+      finalBuffer = transformedBuffer;
+      quality = 100;
+    } else if (targetExt === '.svg') {
+      const converted = await convertRasterToSvg(transformedBuffer, {
+        mode: svgMode,
+        grayscale: applyGrayscale,
+        quality: hasExplicitQuality ? quality : (preserveQuality ? 96 : quality),
+        maxBytes: !preserveQuality && !hasExplicitQuality ? maxSizeBytes : undefined,
+      });
+      finalBuffer = converted.buffer;
+      svgPixelWidth = converted.width;
+      svgPixelHeight = converted.height;
+      svgRender = converted.modeApplied;
+    } else if (hasExplicitQuality) {
       // MODO CALIDAD CONFIGURABLE: Codificar con el porcentaje exacto elegido por el usuario (ej. 80%, 75%)
       const encodePipeline = sharp(transformedBuffer);
       if (targetExt === '.png') {
@@ -362,7 +407,7 @@ export async function POST(req: NextRequest) {
           finalBuffer = inputBuffer;
         } else {
           // Solo quitar EXIF sin degradar compresión
-          finalBuffer = await sharp(inputBuffer).toBuffer();
+          finalBuffer = await openSource().toBuffer();
         }
         quality = 100;
       } else {
@@ -421,7 +466,7 @@ export async function POST(req: NextRequest) {
 
     // Salvaguarda Global: Si tras cualquier proceso la imagen resultante es más pesada que la original
     // y no se aplicaron transformaciones visuales ni cambio forzado de formato, conservar el archivo 100% original.
-    if (!hasVisualTransforms && finalBuffer.length >= originalSize && (preferredFormat === 'original' || preferredFormat === ext.replace('.', ''))) {
+    if (!keepSourceSvg && !hasVisualTransforms && finalBuffer.length >= originalSize && (preferredFormat === 'original' || preferredFormat === ext.replace('.', ''))) {
       finalBuffer = inputBuffer;
       actualFormat = ext.replace('.', '') === 'jpeg' ? 'jpg' : ext.replace('.', '');
       quality = 100;
@@ -431,9 +476,16 @@ export async function POST(req: NextRequest) {
     const savedBytes = originalSize - compressedSize;
     const savedPercentage = parseFloat(((savedBytes / originalSize) * 100).toFixed(1));
 
-    const finalMetadata = await sharp(finalBuffer).metadata();
-    const finalWidth = finalMetadata.width || originalWidth;
-    const finalHeight = finalMetadata.height || originalHeight;
+    let finalWidth = originalWidth;
+    let finalHeight = originalHeight;
+    if (targetExt === '.svg') {
+      finalWidth = svgPixelWidth || originalWidth;
+      finalHeight = svgPixelHeight || originalHeight;
+    } else {
+      const finalMetadata = await sharp(finalBuffer).metadata();
+      finalWidth = finalMetadata.width || originalWidth;
+      finalHeight = finalMetadata.height || originalHeight;
+    }
 
     const mimeTypes: Record<string, string> = {
       jpg: 'image/jpeg',
@@ -487,6 +539,8 @@ export async function POST(req: NextRequest) {
       mimeType,
       upscaleApplied: upscaleFactor > 1 ? upscaleFactor : undefined,
       clarityApplied: applyClarity || undefined,
+      svgRender,
+      monochrome: applyGrayscale || undefined,
     });
   } catch (error: unknown) {
     console.error('Error procesando imagen:', error);

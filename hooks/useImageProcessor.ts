@@ -8,11 +8,12 @@ import {
   CropPosition, 
   ContainBackground,
   ReprocessOverrides,
-  ImageMetadataDetails
+  ImageMetadataDetails,
+  SvgRenderMode
 } from '../types/image';
 import { AISettings, AIInteractionState } from '../types/ai';
 import { asyncPool } from '../utils/concurrency';
-import { resolveFileNamePattern, generateAltText, slugify } from '../utils/naming';
+import { resolveFileNamePattern, generateAltText, slugify, withMonochromeSuffix } from '../utils/naming';
 import { clientPreCompress } from '../utils/clientPreCompress';
 import { isSupportedImageFile, RAW_CAMERA_REGEX } from '../utils/supportedFormats';
 import { extractImageMetadata } from '../utils/metadataExtractor';
@@ -38,6 +39,63 @@ interface UseImageProcessorOptions {
   borderPadding?: number;
   upscaleFactor?: 1 | 2 | 4;
   clarity?: boolean;
+  svgMode?: SvgRenderMode;
+}
+
+interface CompressCallOptions {
+  file: File;
+  qualityMode: 'preserve' | 'manual' | 'maxKB';
+  quality: number;
+  maxKB: number;
+  resizeMode: 'none' | 'custom';
+  customWidth: string;
+  customHeight: string;
+  format: string;
+  rotate: number;
+  flip: boolean;
+  grayscale: boolean;
+  stripExif: boolean;
+  watermarkText: string;
+  customName: string;
+  index?: string;
+  cropFit: CropFit;
+  cropPosition: CropPosition;
+  containBackground: ContainBackground;
+  borderPadding: number;
+  upscaleFactor: number;
+  clarity: boolean;
+  svgMode: SvgRenderMode;
+}
+
+function appendCompressFields(formData: FormData, opts: CompressCallOptions) {
+  formData.append('file', opts.file);
+  if (opts.qualityMode === 'preserve') {
+    formData.append('preserveQuality', 'true');
+  } else if (opts.qualityMode === 'manual') {
+    formData.append('preserveQuality', 'false');
+    formData.append('quality', opts.quality.toString());
+  } else {
+    formData.append('preserveQuality', 'false');
+    formData.append('maxKB', opts.maxKB.toString());
+  }
+  formData.append('resizeMode', opts.resizeMode);
+  formData.append('maxWidth', opts.customWidth || '0');
+  formData.append('maxHeight', opts.customHeight || '0');
+  formData.append('format', opts.format);
+  formData.append('rotate', opts.rotate.toString());
+  formData.append('flip', opts.flip ? 'true' : 'false');
+  formData.append('grayscale', opts.grayscale ? 'true' : 'false');
+  formData.append('stripExif', opts.stripExif ? 'true' : 'false');
+  formData.append('watermarkText', opts.watermarkText);
+  formData.append('customName', opts.customName);
+  if (opts.index) formData.append('index', opts.index);
+  formData.append('cropFit', opts.cropFit);
+  formData.append('cropPosition', opts.cropPosition);
+  formData.append('containBackground', opts.containBackground);
+  formData.append('borderPadding', opts.borderPadding.toString());
+  formData.append('upscaleFactor', opts.upscaleFactor.toString());
+  formData.append('clarity', opts.clarity ? 'true' : 'false');
+  formData.append('svgMode', opts.svgMode);
 }
 
 const getImageDimensions = (url: string): Promise<{ width: number; height: number }> => {
@@ -87,10 +145,12 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     borderPadding = 0,
     upscaleFactor = 1,
     clarity = false,
+    svgMode = 'auto',
   } = options;
 
   const [images, setImages] = useState<ProcessedImage[]>([]);
   const [isZipping, setIsZipping] = useState(false);
+  const [isCreatingMonochrome, setIsCreatingMonochrome] = useState(false);
   const [selectedPreview, setSelectedPreview] = useState<ProcessedImage | null>(null);
   const [selectedSrcsetImage, setSelectedSrcsetImage] = useState<ProcessedImage | null>(null);
   const [selectedCropImage, setSelectedCropImage] = useState<ProcessedImage | null>(null);
@@ -225,33 +285,30 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       try {
         const uploadableFile = await clientPreCompress(file);
         const formData = new FormData();
-        formData.append('file', uploadableFile);
-        if (qualityMode === 'preserve') {
-          formData.append('preserveQuality', 'true');
-        } else if (qualityMode === 'manual') {
-          formData.append('preserveQuality', 'false');
-          formData.append('quality', quality.toString());
-        } else {
-          formData.append('preserveQuality', 'false');
-          formData.append('maxKB', maxKB.toString());
-        }
-        formData.append('resizeMode', resizeMode);
-        formData.append('maxWidth', customWidth || '0');
-        formData.append('maxHeight', customHeight || '0');
-        formData.append('format', format);
-        formData.append('rotate', rotate.toString());
-        formData.append('flip', flip ? 'true' : 'false');
-        formData.append('grayscale', grayscale ? 'true' : 'false');
-        formData.append('stripExif', stripExif ? 'true' : 'false');
-        formData.append('watermarkText', watermarkText);
-        formData.append('customName', customNamePattern);
-        formData.append('index', (i + 1).toString());
-        formData.append('cropFit', cropFit);
-        formData.append('cropPosition', cropPosition);
-        formData.append('containBackground', containBackground);
-        formData.append('borderPadding', borderPadding.toString());
-        formData.append('upscaleFactor', upscaleFactor.toString());
-        formData.append('clarity', clarity ? 'true' : 'false');
+        appendCompressFields(formData, {
+          file: uploadableFile,
+          qualityMode,
+          quality,
+          maxKB,
+          resizeMode,
+          customWidth,
+          customHeight,
+          format,
+          rotate,
+          flip,
+          grayscale,
+          stripExif,
+          watermarkText,
+          customName: customNamePattern,
+          index: (i + 1).toString(),
+          cropFit,
+          cropPosition,
+          containBackground,
+          borderPadding,
+          upscaleFactor,
+          clarity: Boolean(clarity),
+          svgMode,
+        });
 
         const res = await fetch('/api/compress', {
           method: 'POST',
@@ -280,6 +337,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
           mimeType: data.mimeType,
           upscaleApplied: data.upscaleApplied,
           clarityApplied: data.clarityApplied,
+          svgRender: data.svgRender,
         } : img));
       } catch (err: unknown) {
         const errorMsg = err instanceof Error ? err.message : 'Error en proceso';
@@ -310,6 +368,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     const targetBorderPad = overrides?.borderPadding ?? borderPadding;
     const targetUpscale = overrides?.upscaleFactor ?? upscaleFactor;
     const targetClarity = overrides?.clarity ?? clarity;
+    const targetGrayscale = overrides?.grayscale ?? grayscale;
+    const targetSvgMode = overrides?.svgMode ?? svgMode;
 
     const list = [...images];
     if (list.length === 0) return;
@@ -318,6 +378,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'processing' } : i));
 
       const isRawCamera = RAW_CAMERA_REGEX.test(img.originalName);
+      const forceGrayscale = Boolean(img.monochrome) || targetGrayscale;
 
       const isCustomTransform = 
         targetModeQ !== 'preserve' ||
@@ -325,7 +386,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         targetFormat !== 'original' ||
         rotate !== 0 ||
         flip ||
-        grayscale ||
+        forceGrayscale ||
         isRawCamera ||
         (targetUpscale > 1) ||
         targetClarity ||
@@ -361,33 +422,30 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         const uploadableFile = await clientPreCompress(rawFile);
         
         const formData = new FormData();
-        formData.append('file', uploadableFile);
-        if (targetModeQ === 'preserve') {
-          formData.append('preserveQuality', 'true');
-        } else if (targetModeQ === 'manual') {
-          formData.append('preserveQuality', 'false');
-          formData.append('quality', targetQuality.toString());
-        } else {
-          formData.append('preserveQuality', 'false');
-          formData.append('maxKB', targetKB.toString());
-        }
-        formData.append('resizeMode', targetMode);
-        formData.append('maxWidth', targetWidth || '0');
-        formData.append('maxHeight', targetHeight || '0');
-        formData.append('format', targetFormat);
-        formData.append('rotate', rotate.toString());
-        formData.append('flip', flip ? 'true' : 'false');
-        formData.append('grayscale', grayscale ? 'true' : 'false');
-        formData.append('stripExif', stripExif ? 'true' : 'false');
-        formData.append('watermarkText', watermarkText);
-        formData.append('customName', customNamePattern);
-        formData.append('index', (idx + 1).toString());
-        formData.append('cropFit', targetFit);
-        formData.append('cropPosition', targetPosition);
-        formData.append('containBackground', targetContainBg);
-        formData.append('borderPadding', targetBorderPad.toString());
-        formData.append('upscaleFactor', targetUpscale.toString());
-        formData.append('clarity', targetClarity ? 'true' : 'false');
+        appendCompressFields(formData, {
+          file: uploadableFile,
+          qualityMode: targetModeQ,
+          quality: targetQuality,
+          maxKB: targetKB,
+          resizeMode: targetMode,
+          customWidth: targetWidth,
+          customHeight: targetHeight,
+          format: targetFormat,
+          rotate,
+          flip,
+          grayscale: forceGrayscale,
+          stripExif,
+          watermarkText,
+          customName: customNamePattern,
+          index: (idx + 1).toString(),
+          cropFit: targetFit,
+          cropPosition: targetPosition,
+          containBackground: targetContainBg,
+          borderPadding: targetBorderPad,
+          upscaleFactor: targetUpscale,
+          clarity: Boolean(targetClarity),
+          svgMode: targetSvgMode,
+        });
 
         const res = await fetch('/api/compress', { method: 'POST', body: formData });
         const data = await res.json();
@@ -422,6 +480,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
             base64Data: data.base64Data,
             upscaleApplied: data.upscaleApplied,
             clarityApplied: data.clarityApplied,
+            svgRender: data.svgRender,
+            monochrome: i.monochrome,
           };
         }));
       } catch (err: unknown) {
@@ -559,23 +619,29 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       const uploadableFile = await clientPreCompress(rawFile);
       
       const formData = new FormData();
-      formData.append('file', uploadableFile);
-      formData.append('maxKB', maxKB.toString());
-      formData.append('resizeMode', 'custom');
-      formData.append('maxWidth', customWidth || '1200');
-      formData.append('maxHeight', customHeight || '628');
-      formData.append('format', format);
-      formData.append('rotate', rotate.toString());
-      formData.append('flip', flip ? 'true' : 'false');
-      formData.append('grayscale', grayscale ? 'true' : 'false');
-      formData.append('stripExif', stripExif ? 'true' : 'false');
-      formData.append('watermarkText', watermarkText);
-      formData.append('cropFit', cropFit);
-      formData.append('cropPosition', cropPosition);
-      formData.append('containBackground', containBackground);
-      formData.append('borderPadding', borderPadding.toString());
-      formData.append('upscaleFactor', upscaleFactor.toString());
-      formData.append('clarity', clarity ? 'true' : 'false');
+      appendCompressFields(formData, {
+        file: uploadableFile,
+        qualityMode: 'maxKB',
+        quality,
+        maxKB,
+        resizeMode: 'custom',
+        customWidth: customWidth || '1200',
+        customHeight: customHeight || '628',
+        format,
+        rotate,
+        flip,
+        grayscale: Boolean(targetImg.monochrome) || grayscale,
+        stripExif,
+        watermarkText,
+        customName: '',
+        cropFit,
+        cropPosition,
+        containBackground,
+        borderPadding,
+        upscaleFactor,
+        clarity: Boolean(clarity),
+        svgMode,
+      });
 
       const res = await fetch('/api/compress', { method: 'POST', body: formData });
       const data = await res.json();
@@ -604,6 +670,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         base64Data: data.base64Data,
         upscaleApplied: data.upscaleApplied,
         clarityApplied: data.clarityApplied,
+        svgRender: data.svgRender,
       } : img));
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error desconocido';
@@ -619,21 +686,29 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
       const uploadableFile = await clientPreCompress(rawFile);
       
       const formData = new FormData();
-      formData.append('file', uploadableFile);
-      formData.append('preserveQuality', 'false');
-      formData.append('quality', customQuality.toString());
-      formData.append('format', format);
-      formData.append('rotate', rotate.toString());
-      formData.append('flip', flip ? 'true' : 'false');
-      formData.append('grayscale', grayscale ? 'true' : 'false');
-      formData.append('stripExif', stripExif ? 'true' : 'false');
-      formData.append('watermarkText', watermarkText);
-      formData.append('cropFit', cropFit);
-      formData.append('cropPosition', cropPosition);
-      formData.append('containBackground', containBackground);
-      formData.append('borderPadding', borderPadding.toString());
-      formData.append('upscaleFactor', upscaleFactor.toString());
-      formData.append('clarity', clarity ? 'true' : 'false');
+      appendCompressFields(formData, {
+        file: uploadableFile,
+        qualityMode: 'manual',
+        quality: customQuality,
+        maxKB,
+        resizeMode: 'none',
+        customWidth: '',
+        customHeight: '',
+        format,
+        rotate,
+        flip,
+        grayscale: Boolean(targetImg.monochrome) || grayscale,
+        stripExif,
+        watermarkText,
+        customName: '',
+        cropFit,
+        cropPosition,
+        containBackground,
+        borderPadding,
+        upscaleFactor,
+        clarity: Boolean(clarity),
+        svgMode,
+      });
 
       const res = await fetch('/api/compress', { method: 'POST', body: formData });
       const data = await res.json();
@@ -661,6 +736,7 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
         base64Data: data.base64Data,
         upscaleApplied: data.upscaleApplied,
         clarityApplied: data.clarityApplied,
+        svgRender: data.svgRender,
       };
 
       setImages(prev => prev.map(img => img.id === targetImg.id ? updatedImg : img));
@@ -668,6 +744,121 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     } catch (err: unknown) {
       console.error('Error re-procesando imagen individual:', err);
       return null;
+    }
+  };
+
+  const createMonochromeVersions = async () => {
+    const sources = images.filter((img) => img.status === 'done' && !img.monochrome);
+    if (sources.length === 0 || isCreatingMonochrome) return;
+
+    const clones = sources.map((img, idx) => {
+      const id = Math.random().toString(36).substring(2, 9);
+      const file = originalFilesRef.current.get(img.id);
+      if (file) originalFilesRef.current.set(id, file);
+      const baseName = img.outputFileName || img.originalName;
+      return {
+        sourceId: img.id,
+        source: img,
+        index: idx,
+        entry: {
+          ...img,
+          id,
+          outputFileName: withMonochromeSuffix(baseName),
+          altText: img.altText ? `${img.altText} en blanco y negro` : 'Blanco y negro',
+          status: 'processing' as const,
+          monochrome: true,
+          base64Data: '',
+          errorMessage: undefined,
+        },
+      };
+    });
+
+    setIsCreatingMonochrome(true);
+    setImages((prev) => {
+      const next = [...prev];
+      clones.forEach((clone) => {
+        const at = next.findIndex((item) => item.id === clone.sourceId);
+        if (at === -1) next.unshift(clone.entry);
+        else next.splice(at + 1, 0, clone.entry);
+      });
+      return next;
+    });
+
+    try {
+      await asyncPool(3, clones, async (clone) => {
+        try {
+          const originalFile = originalFilesRef.current.get(clone.entry.id);
+          const blob = originalFile
+            ? originalFile
+            : await fetch(clone.source.previewUrl).then((r) => r.blob());
+          const rawFile = originalFile
+            ? originalFile
+            : new File([blob], clone.source.originalName, { type: clone.source.mimeType || blob.type || 'image/jpeg' });
+          const uploadableFile = await clientPreCompress(rawFile);
+          const formData = new FormData();
+          appendCompressFields(formData, {
+            file: uploadableFile,
+            qualityMode,
+            quality,
+            maxKB,
+            resizeMode,
+            customWidth,
+            customHeight,
+            format,
+            rotate,
+            flip,
+            grayscale: true,
+            stripExif,
+            watermarkText,
+            customName: customNamePattern,
+            index: (clone.index + 1).toString(),
+            cropFit,
+            cropPosition,
+            containBackground,
+            borderPadding,
+            upscaleFactor,
+            clarity: Boolean(clarity),
+            svgMode,
+          });
+
+          const res = await fetch('/api/compress', { method: 'POST', body: formData });
+          const data = await res.json();
+          if (!res.ok || !data.success) throw new Error(data.error || 'Error al crear la versión en blanco y negro');
+
+          const serverName = data.outputFileName || clone.entry.outputFileName;
+          const outputFileName = customNamePattern && customNamePattern.trim().length > 0
+            ? withMonochromeSuffix(serverName)
+            : withMonochromeSuffix(clone.entry.outputFileName.replace(/\.[^/.]+$/, '') + '.' + (data.formatApplied || 'jpg').toLowerCase().replace('jpeg', 'jpg'));
+
+          setImages((prev) => prev.map((item) => item.id === clone.entry.id ? {
+            ...item,
+            status: 'done',
+            outputFileName,
+            finalWidth: data.finalWidth || item.finalWidth,
+            finalHeight: data.finalHeight || item.finalHeight,
+            compressedSizeBytes: data.compressedSizeBytes,
+            qualityApplied: data.qualityApplied,
+            formatApplied: data.formatApplied,
+            savedPercentage: data.savedPercentage,
+            base64Data: data.base64Data,
+            mimeType: data.mimeType,
+            upscaleApplied: data.upscaleApplied,
+            clarityApplied: data.clarityApplied,
+            svgRender: data.svgRender,
+            monochrome: true,
+          } : item));
+        } catch (err: unknown) {
+          const errorMsg = err instanceof Error ? err.message : 'Error en versión B/N';
+          setImages((prev) => prev.map((item) => item.id === clone.entry.id ? {
+            ...item,
+            status: 'error',
+            errorMessage: errorMsg,
+            monochrome: true,
+          } : item));
+        }
+      });
+    } finally {
+      setIsCreatingMonochrome(false);
     }
   };
 
@@ -893,6 +1084,8 @@ export function useImageProcessor(options: UseImageProcessorOptions) {
     applyBatchSlugify,
     downloadSingle,
     downloadAllZip,
+    createMonochromeVersions,
+    isCreatingMonochrome,
     totalOriginalBytes,
     totalCompressedBytes,
     totalSavedBytes,

@@ -25,7 +25,7 @@
 ### 🖼️ 1. Compresión y Motor de Imagen Ultra Rápido
 - **🎯 Compresión por Peso Objetivo (Target KB):** Algoritmo iterativo inteligente que ajusta la calidad de forma progresiva hasta lograr el peso máximo deseado sin degradar la imagen innecesariamente.
 - **✨ Modo Sin Pérdida (Lossless):** Preserva el 100% de la fidelidad cromática y detalle original con máxima compresión estructural.
-- **🔄 Soporte Multi-Formato Universal:** Exportación y conversión entre **WebP, AVIF, JPEG, PNG, TIFF y GIF** (estático y animado).
+- **🔄 Soporte Multi-Formato Universal:** Exportación y conversión entre **WebP, AVIF, JPEG, PNG, TIFF, GIF y SVG** (de SVG a raster y de cualquier imagen a SVG), más una copia en blanco y negro.
 - **📷 Soporte de Formatos RAW & HEIC:** Decodificación directa de archivos de cámara profesional (**DNG, CR2, NEF, ARW, HEIC**).
 - **🔍 Super-Resolución Lanczos3 (2x / 4x) & Claridad HD:** Reescalado de alta fidelidad con algoritmo Lanczos3 y filtro adaptativo de nitidez HD.
 
